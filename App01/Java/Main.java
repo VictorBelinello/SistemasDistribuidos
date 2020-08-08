@@ -28,6 +28,8 @@ public class Main {
             // Inicia thread de leitura de mensagens (metodo run)
             peer.start();
 
+            peer.sendMulticastMessage("Coé rapaziada");
+
         } catch (UnknownHostException e) {
             System.out.print(e);
         } catch (SocketException e) {

@@ -1,3 +1,4 @@
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -73,7 +74,7 @@ public class MulticastPeer extends Thread {
 		// Entra no grupo
 		s = new MulticastSocket(6789);
 		s.joinGroup(this.group);
-		Header header = new Header(this.uuid, TOM_PublicKey, 97);
+		Header header = new Header(this.uuid, TOM_PublicKey, 0);
 
 		// Converte chave pública para byte[]
 		byte[] key = this.pubKey.getEncoded();
@@ -100,6 +101,28 @@ public class MulticastPeer extends Thread {
 		return kf.generatePublic(encodedKeySpec);
 	}
 
+	public void sendMulticastMessage(String msg) throws IOException, InvalidKeyException, SignatureException{
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		// Gera assinatura para msg
+		byte[] signature = generateSignature(msg);
+		byte[] bytesMsg = msg.getBytes();
+		
+		// Monta o header 
+		int offset = HEADER_SIZE + msg.length();
+		Header header = new Header(this.uuid, TOM_Normal, offset);
+
+		// Envia mensagem e assinatura para "os"
+		os.write(bytesMsg);
+		os.write(signature);
+		
+		// Adiciona o header ao conteudo de "os" convertido para byte[]
+		byte[] m = header.appendHeaderTo(os.toByteArray());
+
+		// Envia mensagem
+		DatagramPacket messageOut = new DatagramPacket(m, m.length, group, 6789);
+		s.send(messageOut);
+
+	}
 	public void run() {
 		try {
 			byte[] buffer = new byte[1000];
@@ -110,10 +133,10 @@ public class MulticastPeer extends Thread {
 
 				Header header = Header.extractHeader(raw);
 
-				UUID uuid = header.uuid;
+				UUID senderUUID = header.uuid;
 
 				// Verifica se não está na lista, ou seja, é um novo nó
-				if (!this.nodesPubKeys.containsKey(uuid) && !this.nodesRep.containsKey(uuid)) {
+				if (!this.nodesPubKeys.containsKey(senderUUID) && !this.nodesRep.containsKey(senderUUID)) {
 					// Se for, a mensagem é a chave publica do remetente
 
 					// Extrai a chave pública 
@@ -122,21 +145,20 @@ public class MulticastPeer extends Thread {
 					PublicKey pubKey = extractKey(encodedKey);
 
 					// Adiciona nó nas listas
-					addNode(uuid, pubKey);
+					addNode(senderUUID, pubKey);
 
 					// Como pubKey apenas mostra *<Algoritmo> Public Key* para não poluir o chat
-					System.out.printf("[%s]: %s Public Key\n", uuid.toString(), pubKey.getAlgorithm());
-					System.exit(0);
+					System.out.printf("[%s]: %s Public Key\n", senderUUID.toString(), pubKey.getAlgorithm());
 				} else {
 					// Verifica validade da mensagem
 					String message = new String(raw, "UTF8");
 					char type = header.type;
 					int startOfSignature = header.startOfSignature;
 					// Recupera a chave pública do remetente da lista
-					// PublicKey senderPublicKey = this.nodesPubKeys.get(senderID);
+					PublicKey senderPublicKey = this.nodesPubKeys.get(senderUUID);
 					// this.sig.initVerify(senderPublicKey);
 
-					// System.out.printf("[%s]: %s\n", senderID.toString(), message.substring(36));
+					System.out.printf("[%s]: Enviou uma mensagem\n", senderUUID.toString());
 				}
 
 			}
