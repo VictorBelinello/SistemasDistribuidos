@@ -18,7 +18,7 @@ public class Main {
 
             // Inicializa assinatura (cria as chaves publica e privada)
             peer.initSignature();
-            
+
             // Obtem um identificador unico
             peer.setUUID(UUID.randomUUID());
 

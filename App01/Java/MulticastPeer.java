@@ -24,17 +24,17 @@ public class MulticastPeer extends Thread {
 	private PrivateKey priKey; // Chave privada do nó (usada para inicializar a assinatura)
 	private Signature sig; // Assinatura própia do nó
 	private UUID uuid; // Identificador unico do nó
-
 	private MulticastSocket s = null; // Socket para conexão Multicast com grupo
 	private InetAddress group = null; // IP Multicast do grupo
-	Map<UUID, Integer> nodesRep = null; // Lista das reputações dos nós no grupo
-	Map<UUID, PublicKey> nodesPubKeys = null; // Lista das chaves publicas dos nós no grupo
+	private Map<UUID, Integer> nodesRep = null; // Lista das reputações dos nós no grupo
+	private Map<UUID, PublicKey> nodesPubKeys = null; // Lista das chaves publicas dos nós no grupo
+	private final String ALGORITHM = "DSA"; // Usa algoritmo DSA para gerar chaves/assinatura
 
-	boolean continueChat = true;
+	final char TOM_PublicKey = '0'; // Mensagem enviando a chave publica
+	final char TOM_Alert = '1'; // Mensagem enviando um alerta sobre outra mensagem (fake news)
+	final char TOM_Normal = '2'; // Mensagem comum
 
-	final char TOM_PublicKey = '0';
-	final char TOM_Alert = '1';
-	final int HEADER_SIZE = 40; // Header com tamanho fixo de 40bytes
+	final int HEADER_SIZE = 41; // Header com tamanho fixo de 41bytes
 
 	public MulticastPeer() {
 		this.nodesPubKeys = new HashMap<UUID, PublicKey>();
@@ -44,11 +44,11 @@ public class MulticastPeer extends Thread {
 	public void initSignature() throws NoSuchAlgorithmException, InvalidKeyException {
 		// Inicializa objetos necessarios para assinar uma mensagem
 
-		// Instancia usando algoritmo DSA
-		sig = Signature.getInstance("NONEwithRSA");
+		// Instancia usando algoritmo definido
+		sig = Signature.getInstance(ALGORITHM);
 
-		// Gerando chaves publica e privada usando o mesmo algoritmo DSA
-		KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+		// Gerando chaves publica e privada usando o mesmo algoritmo
+		KeyPairGenerator kpg = KeyPairGenerator.getInstance(ALGORITHM);
 		SecureRandom rand = new SecureRandom();
 		kpg.initialize(512, rand);
 		KeyPair pair = kpg.genKeyPair();
@@ -73,27 +73,17 @@ public class MulticastPeer extends Thread {
 		// Entra no grupo
 		s = new MulticastSocket(6789);
 		s.joinGroup(this.group);
-
-		byte[] header = makeHeader();
+		Header header = new Header(this.uuid, TOM_PublicKey, 97);
 
 		// Converte chave pública para byte[]
 		byte[] key = this.pubKey.getEncoded();
 
 		// Combina header e mensagem(key)
-		byte[] m = concatHeader(header, key);
+		byte[] m = header.appendHeaderTo(key);
 
 		// Envia mensagem
 		DatagramPacket messageOut = new DatagramPacket(m, m.length, group, 6789);
 		s.send(messageOut);
-	}
-
-	public boolean isFirstTime(UUID id) {
-		// Se nó não estiver nas listas adiciona, efetivamente só uma comparação precisa
-		// ser feita.
-		if (!this.nodesPubKeys.containsKey(id) && !this.nodesRep.containsKey(id)) {
-			return true;
-		}
-		return false;
 	}
 
 	public void addNode(UUID id, PublicKey key) {
@@ -103,7 +93,7 @@ public class MulticastPeer extends Thread {
 
 	public PublicKey extractKey(byte[] encodedKey) throws NoSuchAlgorithmException, InvalidKeySpecException {
 
-		KeyFactory kf = KeyFactory.getInstance("RSA");
+		KeyFactory kf = KeyFactory.getInstance(ALGORITHM);
 
 		X509EncodedKeySpec encodedKeySpec = new X509EncodedKeySpec(encodedKey);
 
@@ -116,60 +106,45 @@ public class MulticastPeer extends Thread {
 			while (true) { // get messages from others in group
 				DatagramPacket messageIn = new DatagramPacket(buffer, buffer.length);
 				this.s.receive(messageIn);
+				byte[] raw = messageIn.getData();
 
-				String message = new String(messageIn.getData(), "UTF8"); // UUID tem 32bytes + 4 caracters para os
-																			// separadores (-)
-				UUID senderID = UUID.fromString(message.substring(0, 36));
+				Header header = Header.extractHeader(raw);
 
-				// Verifica se é a primeira vez que o nó manda uma mensagem
-				if (isFirstTime(senderID)) {
+				UUID uuid = header.uuid;
+
+				// Verifica se não está na lista, ou seja, é um novo nó
+				if (!this.nodesPubKeys.containsKey(uuid) && !this.nodesRep.containsKey(uuid)) {
 					// Se for, a mensagem é a chave publica do remetente
 
-					// Extrai a chave pública da string
-					byte[] encodedKey = Arrays.copyOfRange(messageIn.getData(), 36, messageIn.getData().length);
+					// Extrai a chave pública 
+					byte[] encodedKey = Arrays.copyOfRange(messageIn.getData(), HEADER_SIZE,
+							messageIn.getData().length);
 					PublicKey pubKey = extractKey(encodedKey);
 
 					// Adiciona nó nas listas
-					addNode(senderID, pubKey);
-					// Como pubKey apenas mostra *Public Key* para não poluir o chat
-					System.out.println(senderID.toString() + ": *Public Key*");
+					addNode(uuid, pubKey);
+
+					// Como pubKey apenas mostra *<Algoritmo> Public Key* para não poluir o chat
+					System.out.printf("[%s]: %s Public Key\n", uuid.toString(), pubKey.getAlgorithm());
+					System.exit(0);
 				} else {
 					// Verifica validade da mensagem
-
+					String message = new String(raw, "UTF8");
+					char type = header.type;
+					int startOfSignature = header.startOfSignature;
 					// Recupera a chave pública do remetente da lista
-					PublicKey senderPublicKey = this.nodesPubKeys.get(senderID);
-					this.sig.initVerify(senderPublicKey);
+					// PublicKey senderPublicKey = this.nodesPubKeys.get(senderID);
+					// this.sig.initVerify(senderPublicKey);
 
-					System.out.printf("[%s]: %s\n", senderID.toString(), message.substring(36));
+					// System.out.printf("[%s]: %s\n", senderID.toString(), message.substring(36));
 				}
 
 			}
-		} catch (NoSuchAlgorithmException | InvalidKeySpecException | InvalidKeyException e) {
+		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
 			System.out.println("Public Key: " + e.getMessage());
 		} catch (IOException e) {
 			System.out.println("IO: " + e.getMessage());
 		}
-	}
-
-	public byte[] makeHeader() {
-		// Precede a mensagem com o id do usuario para ser identificado e salvo pelos
-		// outros membros do grupo
-		String id = this.uuid.toString();
-		char typeOfMessage = TOM_PublicKey;
-		byte[] idBytes = id.getBytes();
-
-		byte[] header = new byte[HEADER_SIZE];
-
-		return header;
-
-	}
-
-	public byte[] concatHeader(byte[] header, byte[] msg) {
-		byte[] m = new byte[msg.length + HEADER_SIZE];
-		System.arraycopy(header, 0, m, 0, HEADER_SIZE);
-		System.arraycopy(msg, 0, m, HEADER_SIZE, msg.length);
-
-		return m;
 	}
 
 	// Getters e Setters
