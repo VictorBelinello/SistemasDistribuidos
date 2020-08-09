@@ -34,11 +34,13 @@ class MulticastPeer(Thread):
     def getInput(self):
         while True:
             msg = input("Digite a mensagem: ")
-            # Envia msg para grupo multicast
             msg = str(self.UUID) + msg
+            # Envia msg para grupo multicast
             self.sock.sendto(msg.encode('UTF-8'), (multicast_addr, port))
 
     def run(self):
         while True:
-            msg, addr = self.sock.recvfrom(255)
-            print(msg.decode('UTF-8'), addr)
+            data, addr = self.sock.recvfrom(255)
+            senderID = data[:36].decode('UTF-8')
+            msg = data[36:36+5] # TODO: deixar generico, so funciona com msg = Teste
+            print(f"[{senderID}]: {msg.decode()}")
