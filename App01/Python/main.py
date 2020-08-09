@@ -1,5 +1,4 @@
 from multicast_peer import MulticastPeer
-import sys
 
 def main():
     peer = MulticastPeer()
