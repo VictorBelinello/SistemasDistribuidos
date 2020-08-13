@@ -10,9 +10,10 @@ multicast_addr = '224.0.0.0'
 bind_addr = '0.0.0.0' # Bind to all interfaces in the system
 port = 3000
 
-pubKeys = {}
+
 
 class MulticastPeer(Thread):
+    
     def __init__(self):
         Thread.__init__(self)
 
@@ -32,12 +33,13 @@ class MulticastPeer(Thread):
         self.start()
 
         #### Peer object
+        self.pubKeys = {}
         # Obtem um uuid aleatorio
         self.UUID = uuid4()
         # Obtem par de chaves 
         self.keyPair = crypt.getKeys()
         # Adiciona chave publica
-        pubKeys[str(self.UUID)] = self.keyPair.publickey()
+        self.pubKeys[str(self.UUID)] = self.keyPair.publickey()
         
 
     def getInput(self):
@@ -63,15 +65,15 @@ class MulticastPeer(Thread):
             # Extrai o UUID do remetente
             senderID = data[:36].decode('UTF-8')
             # Obtem chave publica
-            pubKey = pubKeys[senderID]
+           # pubKey = pubKeys[senderID]
             # Extrai mensagem 
             msg = data[36:36+5] # TODO: deixar generico, so funciona com msg = Teste
             # Extra assinatura da mensagem
             sig = bytes(data[36+5:])
 
             # Verifica assinatura
-            if(crypt.verify(pubKey, msg, sig)):
-                print("Deu boa")
-                print(f"[{senderID}]: {msg.decode()}")
-            else:
-                print("Nao deu boa")
+            #if(crypt.verify(pubKey, msg, sig)):
+            #    print("Deu boa")
+            print(f"\n[{senderID}]: {msg.decode()}\n")
+           # else:
+           #     print("Nao deu boa")
