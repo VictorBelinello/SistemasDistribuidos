@@ -6,13 +6,16 @@ BIND_ADDR = '0.0.0.0' # Bind to all interfaces in the system
 PORT = 3000
 
 #### Constantes relativas ao header da mensagem
-# Header:   UUID | Tipo mensagem | Tamanho mensagem | 
+# Header:   UUID | Porta unicast | Tipo mensagem | Tamanho mensagem | 
 # UUID
 UUID_BYTES = 32 + 4 # UUID tem 128bits = 32bytes. Alem disso tem 4bytes para separadores
 UUID_RANGE = slice(0,UUID_BYTES) # Logo na mensagem o UUID esta na faixa [0:36]
 
+# Porta unicast
+PORT_RANGE = slice(UUID_RANGE.stop, UUID_RANGE.stop + 5) # 5 caracteres logo apos UUID
+
 # Tipo mensagem
-MSG_TYPE_RANGE = slice(UUID_RANGE.stop , UUID_RANGE.stop + 1) # Tipo da mensagem tem 1 char apenas 
+MSG_TYPE_RANGE = slice(PORT_RANGE.stop , PORT_RANGE.stop + 1) # Tipo da mensagem tem 1 char apenas 
 MSG_TYPE_PUBKEY = "0"
 MSG_TYPE_NORMAL = "2"
 
