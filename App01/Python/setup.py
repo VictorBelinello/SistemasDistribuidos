@@ -13,12 +13,15 @@ UUID_RANGE = slice(0,UUID_BYTES) # Logo na mensagem o UUID esta na faixa [0:36]
 
 # Tipo mensagem
 MSG_TYPE_RANGE = slice(UUID_RANGE.stop , UUID_RANGE.stop + 1) # Tipo da mensagem tem 1 char apenas 
+MSG_TYPE_PUBKEY = "0"
+MSG_TYPE_NORMAL = "2"
+
 
 # Tamanho mensagem
 import math
 MSG_MAX_CHAR = 10000 # Numero maximo de caracteres da mensagem
 MAX_NUMBER_DIGITS_MSG = int(math.log10(MSG_MAX_CHAR)) + 1  # Numero de char/digitos necessarios para representar o tamanho da mensagem. Exemplo: Se a mensagem tiver 2487 caracteres, para representar tal tamanho precisamos de 4 caracteres ('2','4','8','7')
-MSG_LENGHT_RANGE = slice(MSG_TYPE_RANGE.stop, MSG_TYPE_RANGE.stop + MAX_NUMBER_DIGITS_MSG) 
+MSG_SIZE_RANGE = slice(MSG_TYPE_RANGE.stop, MSG_TYPE_RANGE.stop + MAX_NUMBER_DIGITS_MSG) 
 
 # Inicio da mensagem em si
-MSG_START_BYTE = MSG_LENGHT_RANGE.stop
+MSG_START_BYTE = MSG_SIZE_RANGE.stop

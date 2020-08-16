@@ -2,7 +2,7 @@ from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 
-def getKeys():
+def getKeyPair():
     key = RSA.generate(1024)
     return key
 
@@ -10,6 +10,9 @@ def sign(message, key):
     h = SHA256.new(message)
     signature = pkcs1_15.new(key).sign(h)
     return signature
+
+def keyFromString(string):
+    return RSA.import_key(string)
 
 def verify(key, message, signature):
     h = SHA256.new(message)
