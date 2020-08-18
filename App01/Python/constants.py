@@ -15,7 +15,7 @@ MSG_TYPE_PUBKEY = "0"
 MSG_TYPE_REPUTATION = "1"
 MSG_TYPE_NORMAL = "2"
 MSG_TYPE_REPORT = "3"
-MSG_TYPE_LEFT = "4"
+MSG_TYPE_EXIT = "4"
 
 # Tamanho mensagem
 import math
