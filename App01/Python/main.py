@@ -2,42 +2,17 @@ from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 
+import ast
+import sys
 import socket
 import struct
 from threading import Thread, active_count
 from uuid import uuid4
 
-### Constantes relativas à conexao 
-MULTICAST_ADDR = '224.0.0.0'
-BIND_ADDR = '0.0.0.0' # Bind to all interfaces in the system
-PORT = 3000
-
-#### Constantes relativas ao header da mensagem
-# Header:   UUID | Porta unicast | Tipo mensagem | Tamanho mensagem | 
-# UUID
-UUID_BYTES = 32 + 4 # UUID tem 128bits = 32bytes. Alem disso tem 4bytes para separadores
-UUID_RANGE = slice(0,UUID_BYTES) # Logo na mensagem o UUID esta na faixa [0:36]
-
-# Porta unicast
-PORT_RANGE = slice(UUID_RANGE.stop, UUID_RANGE.stop + 5) # 5 caracteres logo apos UUID
-
-# Tipo mensagem
-MSG_TYPE_RANGE = slice(PORT_RANGE.stop , PORT_RANGE.stop + 1) # Tipo da mensagem tem 1 char apenas 
-MSG_TYPE_PUBKEY = "0"
-MSG_TYPE_NORMAL = "2"
-
-
-# Tamanho mensagem
-import math
-MSG_MAX_CHAR = 10000 # Numero maximo de caracteres da mensagem
-MAX_NUMBER_DIGITS_MSG = int(math.log10(MSG_MAX_CHAR)) + 1  # Numero de char/digitos necessarios para representar o tamanho da mensagem. Exemplo: Se a mensagem tiver 2487 caracteres, para representar tal tamanho precisamos de 4 caracteres ('2','4','8','7')
-MSG_SIZE_RANGE = slice(MSG_TYPE_RANGE.stop, MSG_TYPE_RANGE.stop + MAX_NUMBER_DIGITS_MSG) 
-
-# Inicio da mensagem em si
-MSG_START_BYTE = MSG_SIZE_RANGE.stop
+from constants import *
 
 # Create multicast and unicast sockets
-def createSockets():
+def createSockets(multicast_addr):
     # Multicast socket
     # Datagram socket for IPv4
     multi_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -45,10 +20,10 @@ def createSockets():
     multi_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     # To join multicast group change the option IP_ADD_MEMBERSHIP, a 8-byte representation of:
     # multicast group address + network interface to listen
-    membership = struct.pack("=4sL", socket.inet_aton(MULTICAST_ADDR), socket.INADDR_ANY)
+    membership = struct.pack("=4sL", socket.inet_aton(multicast_addr), socket.INADDR_ANY)
     multi_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, membership)
     # Bind socket to all interfaces
-    addr = (BIND_ADDR, PORT)
+    addr = ('0.0.0.0', PORT)
     multi_socket.bind(addr)
 
 
@@ -101,7 +76,7 @@ def verifySignature(key, message, signature):
         pkcs1_15.new(key).verify(h, signature)
         return True
     except (ValueError, TypeError):
-        print("Signature is not valid")
+        print("ERROR: Signature is not valid")
         return False
 
 # Sign a message
@@ -110,10 +85,15 @@ def sign(message, key):
     signature = pkcs1_15.new(key).sign(h)
     return signature
 
+# Print a message to terminal
+def printMessage(header, message):
+    print(f"[{header:^11}]: {message}")
+
 class MulticastPeer:
-    def __init__(self):
+    def __init__(self, multicast_addr):
         # Networking init
-        self.unicast_socket, self.multicast_socket = createSockets()
+        self.multicast_addr = multicast_addr
+        self.unicast_socket, self.multicast_socket = createSockets(self.multicast_addr)
         self.unicast_port = self.unicast_socket.getsockname()[1]
 
         # Create reading threads
@@ -125,7 +105,8 @@ class MulticastPeer:
 
         # Peer specific init
         self.group_public_keys = {}
-        self.uuid = str(uuid4())
+        self.uuid = str(uuid4())[:UUID_SHORT]
+        self.group_reputations = {self.uuid:1}
         self.key_pair = RSA.generate(1024)
         self.public_key = self.key_pair.publickey()
 
@@ -135,9 +116,15 @@ class MulticastPeer:
         _public_key = addHeader(self.uuid, self.unicast_port, MSG_TYPE_PUBKEY, _public_key)
 
         # Send first message (public key)
-        self.multicast_socket.sendto(_public_key, (MULTICAST_ADDR, PORT))
-        print("Done initializing, entering group")
-        print("Sending public key via MULTICAST")
+        self.multicast_socket.sendto(_public_key, (multicast_addr, PORT))
+        # Print basic info about program
+        print("*"*40)
+        print("Done initializing, entering group.")
+        print("The id of sender will be shown at the start of a message, between brackets '[]'.")
+        print(f"Your id is: {self.uuid}")
+        print("To report a message send by <id> just say: !<id>")
+        print("To quit just say: !exit or press CTRL+C")
+        print("*"*40)
 
     def readUnicast(self):
         while True:
@@ -151,6 +138,10 @@ class MulticastPeer:
                 key = RSA.import_key(msg)
                 # Add new public
                 self.group_public_keys[uuid] = key
+            # The message sent contains a list of reputations of group 
+            if msg_type == MSG_TYPE_REPUTATION:
+                reputations = ast.literal_eval(msg.decode("UTF-8"))
+                self.group_reputations.update(reputations)
 
     def readMulticast(self):
         while True:
@@ -158,16 +149,18 @@ class MulticastPeer:
             uuid, unicast_port, msg_type, msg_size, msg, signature = parseBytesData(data)
             if uuid == self.uuid:
                 continue
+            print("\r") # Reset to start of line
             # The message sent is a public key
             if msg_type == MSG_TYPE_PUBKEY:
                 # New node entered the group and sent his public key
                 # Add the new public key
                 # Extract public key received
                 key = RSA.import_key(msg)
-                # Add new public
+                # Add new public key
                 self.group_public_keys[uuid] = key
+                # Add new reputation, start at 1 = 100%
+                self.group_reputations[uuid] = 1.0
 
-                print("New node added")
                 # The unicast address of the sender (new node)
                 unicast_addr = (addr[0], unicast_port)
 
@@ -175,29 +168,107 @@ class MulticastPeer:
                 msg_bytes = addHeader(self.uuid, self.unicast_port, MSG_TYPE_PUBKEY, self.public_key_str)
                 # Send public key to new node in group
                 self.unicast_socket.sendto(msg_bytes, unicast_addr)
-                print("Sending public key via UNICAST to new node")
+                # Send list of reputation to node
+                msg_bytes = addHeader(self.uuid, self.unicast_port, MSG_TYPE_REPUTATION, str(self.group_reputations))
+                self.unicast_socket.sendto(msg_bytes, unicast_addr)
+                printMessage("SYSTEM","New node added")
             # The message sent is a normal message
             elif msg_type == MSG_TYPE_NORMAL: 
                 key = self.group_public_keys[uuid]
                 # Verify signature
                 if verifySignature(key, msg, signature):
-                    print(f"[{uuid[:12]}]: {msg.decode('UTF-8')}")
-                else:
-                    print("Problem with signature")
+                    printMessage(uuid, msg.decode('UTF-8'))
+            # The message sent is a report of fake news
+            elif msg_type == MSG_TYPE_REPORT:
+                key = self.group_public_keys[uuid]
+                # Verify signature
+                if verifySignature(key, msg, signature):
+                    reported = msg.decode('UTF-8')
+                    if reported == self.uuid:
+                        printMessage("WARNING", f"{uuid} reported YOU for sending fake news")
+                    else: 
+                        printMessage("WARNING", f"{uuid} reported {reported} for sending fake news")
+                    self.decreaseReputationOf(reported)
+            # The message sent is a peer leaving the group
+            elif  msg_type == MSG_TYPE_LEFT:
+                printMessage("SYSTEM", f"*{uuid}* left the group." )
+                self.group_public_keys.pop(uuid)
+                self.group_reputations.pop(uuid)
             else:
-                print(f"The message type {msg_type} is not valid.")
+                print(f"ERROR: The message type {msg_type} is not valid.")
                 exit()
+            print("Enter message: ", end="") # Print again the message to get input
+            sys.stdout.flush()
+
+    def decreaseReputationOf(self, uuid):
+        current_rep = float(self.group_reputations[uuid])
+        new_rep = current_rep * 0.9 # 10% less reputation
+        self.group_reputations[uuid] = new_rep
+
+    def parseMessageToSend(self, msg):
+        if msg[0] == "!":
+            command = msg[1:]
+            if command == "exit":
+                return "", MSG_TYPE_LEFT
+            elif command == "list":
+                print("\rList of reputation on 0-1 scale:")
+                for k, v in self.group_reputations.items():
+                    v = str(float(v))
+                    print(f"[{k}]: {v}")
+                return msg, None
+            else: # Report command
+                # The user wrote the short version of uuid, but it is stored as long
+                short_keys = [key[:UUID_SHORT]for key in self.group_reputations.keys()]
+                uuid = command
+                if uuid not in short_keys:
+                    print("Invalid uuid, try again")
+                    print(f"Members: {short_keys}")
+                    return msg, None
+                else:
+                    return uuid, MSG_TYPE_REPORT
+        else:
+            return msg, MSG_TYPE_NORMAL 
+
+def getMulticastAddress():
+    if len(sys.argv) < 2:
+        print("ERROR: You must pass the multicast IP")
+        sys.exit(0)
+    else:
+        multicast_addr = sys.argv[1]
+        try:
+            r = socket.inet_aton(multicast_addr)
+            if r < socket.inet_aton('224.0.0.0') or r > socket.inet_aton('239.255.255.255'):
+                print("ERROR: Not valid multicast address")
+                sys.exit(0)
+            else:
+                return multicast_addr
+        except socket.error as e:
+            print(f"ERROR {multicast_addr} is not a valid IP address")
+            sys.exit(0)
+
 def main():
-    peer = MulticastPeer()
+    addr = getMulticastAddress()
+    peer = MulticastPeer(addr)
     try:
         while True:
-            msg = input("Digite a mensagem: ")
+            msg = input("Enter message: ")
+            msg, msg_type = peer.parseMessageToSend(msg)
+            if msg_type == None: # The user executed a command that has a local result (like listing the reputation of nodes)
+                continue    
+            if msg_type == MSG_TYPE_LEFT: # No need to sign the message
+                msg_bytes = addHeader(peer.uuid, peer.unicast_port, MSG_TYPE_LEFT, "")
+                peer.multicast_socket.sendto(msg_bytes, (peer.multicast_addr, PORT))
+                sys.exit(0)
             sig = sign(msg.encode("UTF-8"), peer.key_pair)
-            msg_bytes = addHeader(peer.uuid, peer.unicast_port, MSG_TYPE_NORMAL, msg)
+            msg_bytes = addHeader(peer.uuid, peer.unicast_port, msg_type, msg)
             msg_bytes += sig
-            peer.multicast_socket.sendto(msg_bytes, (MULTICAST_ADDR, PORT))
+            peer.multicast_socket.sendto(msg_bytes, (peer.multicast_addr, PORT))
+            
     except KeyboardInterrupt:
-        exit()   
+        # Send the warning before leaving
+        msg_bytes = addHeader(peer.uuid, peer.unicast_port, MSG_TYPE_LEFT, "")
+        peer.multicast_socket.sendto(msg_bytes, (peer.multicast_addr, PORT))
+        sys.exit(0)   
 
 if __name__ == "__main__":
     main()
