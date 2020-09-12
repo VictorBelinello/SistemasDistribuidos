@@ -58,6 +58,17 @@ class StockMarket():
         quotes[interest] = self._companies[interest]
     return quotes
 
+  @Pyro4.oneway
+  def notify_client(self, obj):
+    try:
+      time.sleep(5)
+      obj.notify()
+    except Exception as e:
+      print("Erro notify_client")
+      print(e)
+      exit()
+    print("Client notified")
+
 def startNameServer():
     os.system("python -m Pyro4.naming")
 

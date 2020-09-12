@@ -9,6 +9,11 @@ class Client:
         self.name = name
         self.sm = stock_market
 
+    @Pyro4.expose
+    @Pyro4.callback
+    def notify(self):
+        print("Callback from server")
+
     def set_interest(self, companies):
         self.sm.register_interest(self.name, companies)
 
@@ -42,6 +47,13 @@ class Client:
                 print("Nenhum interesse registrado no servidor")
             else:
                 self.list_companies(quotes)
+        elif option == 5:
+            company = self._get_company_input()
+            lower_limit = input("Informe o limite de perda, use . para separar casas decimais")
+            lower_limit = round(float(lower_limit), 2)
+            upper_limit = input("Informe o limite de ganho, use . para separar casas decimais")
+            upper_limit = round(float(upper_limit), 2)
+            
         elif option == 6:
             sys.exit()
 
@@ -56,6 +68,7 @@ class Client:
         print("Digite 2 para inserir uma empresa na lista de interesse")
         print("Digite 3 para remover uma empresa na lista de interesse")
         print("Digite 4 para obter as cotacoes da sua lista de interesse")
+        print("Digite 5 para inserir notificacao assincrona")
         print("Digite 6 para sair do programa")
         print("*"*30)
         opt = input("Opção: ")
@@ -71,6 +84,14 @@ if __name__ == "__main__":
 
     name = input("Informe seu nome: ")
     client = Client(name, sm)    
+
+    print("Inicializando callback")
+    daemon = Pyro4.Daemon()
+    daemon.register(client)
+
+    sm.notify_client(client)
+    Thread(target=daemon.requestLoop, daemon=True).start()
+
     client.show_menu()
     
 
