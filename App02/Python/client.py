@@ -11,22 +11,38 @@ class Client:
 
     @Pyro4.expose
     @Pyro4.callback
-    def notify(self):
-        print("Callback from server")
+    def notify(self, message):
+        print("\nNotificacao do servidor:\n")
+        print(message)
+        print("\n")
+        
+    @Pyro4.expose
+    def get_name(self):
+        return self.name
 
-    def set_interest(self, companies):
-        self.sm.register_interest(self.name, companies)
+    def set_interest(self, company):
+        self.sm.register_interest(self.name, company)
 
-    def list_companies(self, companies_dict):
-        print("Lista das empresas e o valor das acoes no mercado")
-        for k in companies_dict.keys():
-            print(f"{k:<5}: {companies_dict[k]}")
+    def set_notify(self, company, lower_limit, upper_limit):
+        print(f"Voce recebera notificacoes quando atingir um dos limites : [{lower_limit}, {upper_limit}]")
+        sm.register_notify(self, company, lower_limit, upper_limit)
+        #sm.notify_client(client)
+
+    def list_companies(self, companies):
+        print("Lista das empresas e o valor das acoes no mercado: ")
+        res = list(zip(*companies))
+        for name, value in companies:
+            print(f"{name:<5}: {value}")
+        print("\n")
 
     # Funcao auxiliar para do_option
     def _get_company_input(self):
         company = input("Informe o nome da empresa desejada.\n")
         company = company.upper() # Os nomes sao armazenados em letras maisculas
-        if company not in self.sm.companies.keys():
+        # self.sm.companies retorna uma lista de tuplas com o nome e valor, mas so interessa o nome agora
+        # monta uma lista com nomes de empresas extraindo o primeiro elemento da tupla para cada tupla na lista
+        companies_available = [ c[0] for c in self.sm.companies]
+        if company not in companies_available:
             input("Empresa invalida, pressione ENTER para voltar ao menu. Liste as empresas disponiveis no menu usando a opcao 1")
             self.show_menu()
         else:
@@ -43,17 +59,17 @@ class Client:
             self.sm.remove_interest(self.name, company)
         elif option == 4:
             quotes = self.sm.get_interests_quotes(self.name)
-            if quotes == {}:
+            if not quotes:
                 print("Nenhum interesse registrado no servidor")
             else:
                 self.list_companies(quotes)
         elif option == 5:
             company = self._get_company_input()
-            lower_limit = input("Informe o limite de perda, use . para separar casas decimais")
+            lower_limit = input("Informe o limite de perda, use . para separar casas decimais\n")
             lower_limit = round(float(lower_limit), 2)
-            upper_limit = input("Informe o limite de ganho, use . para separar casas decimais")
+            upper_limit = input("Informe o limite de ganho, use . para separar casas decimais\n")
             upper_limit = round(float(upper_limit), 2)
-            
+            self.set_notify(company, lower_limit, upper_limit)
         elif option == 6:
             sys.exit()
 
@@ -71,8 +87,13 @@ class Client:
         print("Digite 5 para inserir notificacao assincrona")
         print("Digite 6 para sair do programa")
         print("*"*30)
-        opt = input("Opção: ")
-        self.do_option(int(opt))
+        opt = input("Opcao: ")
+        try:
+            opt = int(opt)
+            self.do_option(opt)
+        except ValueError as e:
+            input("Opcao invalida. Pressione ENTER para voltar ao menu")
+            self.show_menu()
         print("*"*30)
 
 if __name__ == "__main__":
@@ -89,7 +110,7 @@ if __name__ == "__main__":
     daemon = Pyro4.Daemon()
     daemon.register(client)
 
-    sm.notify_client(client)
+    
     Thread(target=daemon.requestLoop, daemon=True).start()
 
     client.show_menu()
