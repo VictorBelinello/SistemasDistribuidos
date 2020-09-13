@@ -3,7 +3,7 @@ from threading import Thread
 import sys
 import os
 
-from stock import print_stock
+from stock import print_stock, new_stock
 
 class Client:
     def __init__(self, name, stock_market):
@@ -12,6 +12,23 @@ class Client:
         # Obtem algumas acoes do mercado, para poder realizar vendas e compras
         self.stocks = self.sm.get_random_stocks()
         
+    def set_transaction(self, option):
+        if option == 1 or option == 2:
+            company = self._get_company_input()
+            quantity = input("Informe a quantidade(inteiro)\n")
+            price = input("Informe o preco(maximo na compra ou minimo na venda), use . para separar casas decimais\n")
+            timeout = input("Tempo para ficar em estado condicional(segundos)\n")
+            try:
+                quantity = int(quantity)
+                price = float(price)
+                timeout = float(timeout)
+                s = new_stock(company, quantity)
+                self.sm.set_transaction(self, option, s, price, timeout)
+            except ValueError as e:
+                input("Opcao invalida. Pressione ENTER para voltar ao menu")
+                self.do_option(7)
+        else:
+            self.show_menu()
 
     @Pyro4.expose
     @Pyro4.callback
@@ -78,6 +95,18 @@ class Client:
             print("Lista de acoes na carteira: ")
             print_stock(self.stocks)
         elif option == 7:
+            os.system('cls' if os.name == 'nt' else 'clear')
+            print("Digite 1 para compra")
+            print("Digite 2 para venda")
+            print("Digite 3 para voltar ao menu")
+            opt = input("Opcao: ")
+            try:
+                opt = int(opt)
+                self.set_transaction(opt)
+            except ValueError as e:
+                input("Opcao invalida. Pressione ENTER para voltar ao menu")
+                self.do_option(7)
+        elif option == 8:
             sys.exit()
 
         input("Pressione ENTER para continuar")
@@ -93,7 +122,8 @@ class Client:
         print("Digite 4 para obter as cotacoes da sua lista de interesse")
         print("Digite 5 para inserir notificacao assincrona")
         print("Digite 6 para listar suas acoes")
-        print("Digite 7 para sair do programa")
+        print("Digite 7 para realizar compra/venda")
+        print("Digite 8 para sair do programa")
         print("*"*30)
         opt = input("Opcao: ")
         try:
@@ -122,6 +152,4 @@ if __name__ == "__main__":
     Thread(target=daemon.requestLoop, daemon=True).start()
 
     client.show_menu()
-    
-
-    
+        

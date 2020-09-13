@@ -2,7 +2,7 @@ import random
 import time
 import Pyro4
 
-from stock import new_stock
+from stock import new_stock, print_stock
 
 @Pyro4.expose
 class StockMarket():
@@ -79,6 +79,35 @@ class StockMarket():
           if c[0] in changed_companies:
             self.check_limits(self._clients[client_name]["reference"], c)
 
+  def set_transaction(self, client_obj, option, stock, price, timeout):
+    client_name = client_obj.get_name()
+    transaction_type = "compra" if option == 1 else "venda"
+    
+    print(f"Recebeu pedido de {transaction_type} {client_name}")
+    print_stock(stock)
+
+    transaction = {
+      "type": transaction_type,
+      "stock": stock,
+      "price": price,
+      "timeout": timeout
+    }
+
+    if client_name in self._clients:
+      if "transactions" in self._clients[client_name]:
+        self._clients[client_name]["transactions"].append(transaction)
+      else:
+        self._clients[client_name]["transactions"] = []
+        self._clients[client_name]["transactions"].append(transaction)
+        if "reference" not in self._clients[client_name]:
+          # Referencia ainda nao foi adicionada
+          self._clients[client_name]["reference"] = client_obj
+    else:
+      self._clients[client_name] = {} 
+      self._clients[client_name]["reference"] = client_obj 
+      self._clients[client_name]["transactions"] = [] 
+      self._clients[client_name]["transactions"].append(transaction)
+
   def register_notify(self, client_obj, company, lower_limit, upper_limit):
     client_name = client_obj.get_name()
     print(f"{client_name} registrou interesse em receber notificacoes assincronas sobre {company}")
@@ -91,11 +120,12 @@ class StockMarket():
         # Desse modo se um cliente pedir uma nova notificacao sobre a mesma empresa ela sera adicionada junto
         # Se uma mudanca do valor da acao estiver dentro do limite de ambas ele sera notificado duas vezes
         self._clients[client_name]["notify"].append(info)
-      else:
-        # Nunca pediu notificacao antes
-        self._clients[client_name]["reference"] = client_obj # Referencia para objeto remoto (usado para chamar metodo notify_client)
+      else: # Nunca pediu notificacao antes
         self._clients[client_name]["notify"] = [] # Inicializa uma lista vazia de notificacoes
         self._clients[client_name]["notify"].append(info)  # Adiciona nova notificacao
+        if "reference" not in self._clients[client_name]:
+          # Referencia ainda nao foi adicionada
+          self._clients[client_name]["reference"] = client_obj 
     # Primeira interecao com o cliente
     else:
       self._clients[client_name] = {} # Inicializa um dict vazio para informacoes do client
