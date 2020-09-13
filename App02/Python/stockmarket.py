@@ -2,7 +2,7 @@ import random
 import time
 import Pyro4
 
-
+from stock import new_stock
 
 @Pyro4.expose
 class StockMarket():
@@ -142,3 +142,15 @@ class StockMarket():
       print(e)
       exit()
     print("Cliente notificado\n\n")
+
+  # Retorna uma quantidade aleatorio de algumas acoes possiveis
+  # Essa implementacao simplifica a compra e venda de acoes, pois podemos supor que os clientes tem algumas acoes iniciais ja 
+  def get_random_stocks(self):
+    stocks = []
+    for company in self._companies.keys():
+      # Decide aleatoriamente se vai dar acoes de "company" para cliente
+      if random.choice([True, False]):
+        # Decide a quantidade
+        quantity = random.randint(1, 20)
+        stocks.append( new_stock(company, quantity) )
+    return stocks

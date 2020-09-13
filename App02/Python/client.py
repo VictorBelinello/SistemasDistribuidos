@@ -3,11 +3,15 @@ from threading import Thread
 import sys
 import os
 
+from stock import print_stock
 
 class Client:
     def __init__(self, name, stock_market):
         self.name = name
         self.sm = stock_market
+        # Obtem algumas acoes do mercado, para poder realizar vendas e compras
+        self.stocks = self.sm.get_random_stocks()
+        
 
     @Pyro4.expose
     @Pyro4.callback
@@ -71,6 +75,9 @@ class Client:
             upper_limit = round(float(upper_limit), 2)
             self.set_notify(company, lower_limit, upper_limit)
         elif option == 6:
+            print("Lista de acoes na carteira: ")
+            print_stock(self.stocks)
+        elif option == 7:
             sys.exit()
 
         input("Pressione ENTER para continuar")
@@ -85,7 +92,8 @@ class Client:
         print("Digite 3 para remover uma empresa na lista de interesse")
         print("Digite 4 para obter as cotacoes da sua lista de interesse")
         print("Digite 5 para inserir notificacao assincrona")
-        print("Digite 6 para sair do programa")
+        print("Digite 6 para listar suas acoes")
+        print("Digite 7 para sair do programa")
         print("*"*30)
         opt = input("Opcao: ")
         try:
