@@ -9,7 +9,6 @@ sys.path.append(".")
 def start_name_server():
     os.system("python -m Pyro4.naming")
 
-
 if __name__ == "__main__":
     # Cria uma nova thread para rodar o servidor de nomes
     Thread(target=start_name_server, daemon=True).start()

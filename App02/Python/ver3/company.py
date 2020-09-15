@@ -3,6 +3,13 @@ import random
 import os
 import stock as Stock
 
+class Company(object):
+    def __init__(self, name, stock_value):
+        self._name = name
+        self._stock_value = stock_value
+    
+    def get
+
 def createCompany(name, stock_value):
     company = {
         'name': name,

@@ -1,25 +1,32 @@
 import os
-import company as StockCompany
 import subscription as StockSubscription
-import stock as Stock
+import company as StockCompany
 
-class StockClient(object):
+import Pyro5.api
+
+class StockClient(object):  
   def __init__(self, name):
-    self.name = name
+    self._name = name
         
     self.stocks_owned = []
 
     self.stock_market = None
 
+  @Pyro5.api.expose
+  @property
+  def name(self):
+    return self._name
+
   def __str__(self):
     return f"{id(self)} {self.name}"
 
+  ###############################################################
   def notifyEvent(self, message):
     print(f"\nNotificação : {message}\n")
 
   def notifyTransaction(self, type, company, amount, value):
     company_name = company['name']
-    if type == Stock.BUY_STOCK_TYPE:
+    if type == StockCompany.BUY_STOCK_TYPE:
       # Comprou ações, precisa aumentar amount
       print(f"Comprou {amount} ações de {company_name} pagando {value}")
       flag = False
@@ -31,10 +38,10 @@ class StockClient(object):
       # Nao encontrou a empresa na lista de ações 
       # Significa que comprou ação de uma empresa nova, adiciona ela na lista
       if not flag:
-        stock = Stock.createStock(company, amount)
+        stock = StockCompany.createStock(company, amount)
         self.stocks_owned.append(stock)
 
-    elif type == Stock.SELL_STOCK_TYPE:
+    elif type == StockCompany.SELL_STOCK_TYPE:
       # Vendeu ações, precisa diminui amount
       print(f"Vendeu {amount} ações de {company_name} ganhando {value}")
       for stock in self.stocks_owned:
@@ -67,17 +74,17 @@ class StockClient(object):
   def getStocks(self):
     stocks = self.stocks_owned
     for s in stocks:
-      Stock.printStock(s)
+      StockCompany.printStock(s)
 
   def addDebugTransaction(self, base, type):
-    stock_transaction = Stock.getDebugTransaction(base, type)
+    stock_transaction = StockCompany.getDebugTransaction(base, type)
     print("Debugando")
-    Stock.debug(stock_transaction)
-    if stock_transaction['type'] == Stock.SELL_STOCK_TYPE:
+    StockCompany.debug(stock_transaction)
+    if stock_transaction['type'] == StockCompany.SELL_STOCK_TYPE:
       # Se não tiver imprime o aviso e retorna
-      if not Stock.canDoStockTransaction(stock_transaction, self.stocks_owned):
+      if not StockCompany.canDoStockTransaction(stock_transaction, self.stocks_owned):
         print("Transação de ações falhou")
-        Stock.printStock(stock_transaction)
+        StockCompany.printStock(stock_transaction)
         print(f"Você não tem ações de {stock_transaction['company']['name']} suficientes para vender")
         return 
     self.stock_market.addStockTransactionFor(self.name, stock_transaction)
@@ -85,18 +92,19 @@ class StockClient(object):
     self.stock_market.checkStockTransactions()
 
   def addStockTransaction(self):
-    stock_transaction = Stock.getStockTransactionFromUser(self.stock_market)
+    stock_transaction = StockCompany.getStockTransactionFromUser(self.stock_market)
     # Se esta tentando vender uma ação, verifica se ele tem suficiente
-    if stock_transaction['type'] == Stock.SELL_STOCK_TYPE:
+    if stock_transaction['type'] == StockCompany.SELL_STOCK_TYPE:
       # Se não tiver imprime o aviso e retorna
-      if not Stock.canDoStockTransaction(stock_transaction, self.stocks_owned):
+      if not StockCompany.canDoStockTransaction(stock_transaction, self.stocks_owned):
         print("Transação de ações falhou")
-        Stock.printStock(stock_transaction)
+        StockCompany.printStock(stock_transaction)
         print(f"Você não tem ações de {stock_transaction['company']['name']} suficientes para vender")
         return 
     self.stock_market.addStockTransactionFor(self.name, stock_transaction)
     # Como adicionou uma nova transação já chama o método do stock_market para verificar se ela pode ser efetivada
     self.stock_market.checkStockTransactions()
+
   def showMenu(self):
     menu = {
       0: exit,
@@ -128,7 +136,11 @@ class StockClient(object):
       input("ENTER para continuar...")
 
   def addStockMarket(self, market):
-    print(f"{self.name} adicionou {market.name}")
     self.stock_market = market
-    self.stocks_owned = Stock.giveRandomStocks(self.stock_market)
+    self.stocks_owned = StockCompany.giveRandomStocks(self.stock_market)
     self.stock_market.initClient(self)
+    print(f"{self.name} se conectou com {market.name}")
+
+if __name__ == "__main__":
+    c = StockClient("Victor")
+    print(c)
