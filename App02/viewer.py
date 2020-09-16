@@ -69,6 +69,11 @@ class Viewer(object):
             quotes = self._server.get_viewer_interest_quotes(self.id)
             print(quotes)
 
+    def list_all_symbols(self):
+        if self._server:
+            symbols = self._server.get_all_symbols()
+            print(symbols)
+
     def list_stocks(self):
         for s in self._stocks:
             print(s)
@@ -86,13 +91,14 @@ class Viewer(object):
 
     def show_menu(self):
         menu = {
-        0: exit,
+        0: self.dettach_from_server,
         1: self.list_interest,
         2: self.add_interest,
         3: self.remove_interest,
         4: self.add_subscription,
         5: self.list_stocks,
         6: self.add_transaction,
+        7: self.list_all_symbols,
         }
         opt = -1
         while opt != 0:
@@ -104,12 +110,13 @@ class Viewer(object):
             print("Digite 4 para adicionar inscrição para evento")
             print("Digite 5 para listar ações")
             print("Digite 6 para comprar/vender ações")
+            print("Digite 7 para listar todos os símbolos")
             print("Digite 0 para sair")
             print("*"*30)
 
             try:
                 opt = int(input("Opção: "))
-                if opt > 6 or opt < 0:
+                if opt > 7 or opt < 0:
                     raise ValueError
                 func = menu[opt]
                 func()

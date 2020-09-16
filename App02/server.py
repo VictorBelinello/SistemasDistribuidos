@@ -9,7 +9,7 @@ os.environ["PYRO_LOGFILE"] = "pyro.log"
 os.environ["PYRO_LOGLEVEL"] = "DEBUG"
 
 from Pyro5.api import expose, Daemon, locate_ns, start_ns_loop, oneway
-from Pyro5.errors import get_pyro_traceback
+from Pyro5.errors import get_pyro_traceback, ConnectionClosedError
 from threading import Thread, Lock
 
 @expose
@@ -40,16 +40,24 @@ class StockServer(object):
                 return quote
         return None
 
+    def get_all_symbols(self):
+        """Retorna todos os símbolos disponíveis"""
+        symbols = []
+        for market in self._markets:
+            symbols += market.symbols
+        return symbols
+
     def init_viewer(self, viewer_id, viewer):
         self._interests[viewer_id] = set()
         self._subscribers[viewer_id] = set()
         self._references[viewer_id] = viewer
 
     def remove_viewer(self, viewer_id):
-        print(f"Removendo {viewer_id}")
-        del self._interests[viewer_id]
-        del self._subscribers[viewer_id]
-        del self._references[viewer_id]
+        with self._lock:
+            print(f"Removendo {viewer_id}")
+            del self._interests[viewer_id]
+            del self._subscribers[viewer_id]
+            del self._references[viewer_id]
 
     def give_random_stocks(self):
         """Chamado inicialmente para dar algumas ações para viewer."""
@@ -118,9 +126,9 @@ class StockServer(object):
         viewer._pyroClaimOwnership()
         try:
             viewer.notify(message)
-        except Exception as e:
+        except ConnectionClosedError as e:
             print("Falha na notificação do viewer")
-            print("".join(get_pyro_traceback()))
+            self.remove_viewer(viewer.id)
 
     @oneway
     def notify_viewer_transaction(self, viewer, transaction):
@@ -129,9 +137,9 @@ class StockServer(object):
         viewer._pyroClaimOwnership()
         try:
             viewer.notify_transaction(transaction)
-        except Exception as e:
+        except ConnectionClosedError as e:
             print("Falha na notificação de transação do viewer")
-            print("".join(get_pyro_traceback()))
+            self.remove_viewer(viewer.id)
 
     def check_all_subscriptions(self):
         """Verifica as inscrições para notificação assíncrona."""

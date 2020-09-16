@@ -36,8 +36,6 @@ def main():
                 input("ENTER para ir para menu...")
                 
                 viewer.show_menu()
-
-                viewer.dettach_from_server()
             except NamingError as e:
                 print(e)
                 print("".join(get_pyro_traceback()))
