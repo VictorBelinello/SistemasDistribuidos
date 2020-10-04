@@ -4,11 +4,13 @@ from flask_cors import CORS
 
 from resources.interests import Interests
 from resources.symbols import Symbols
+from resources.subscriptions import Subscriptions
+
 from common.market import Market
 
 if __name__ == "__main__":
   app = Flask(__name__)
-  #CORS(app)
+  CORS(app)
   
   api = restful.Api(app)
 
@@ -26,5 +28,9 @@ if __name__ == "__main__":
                     resource_class_kwargs={'symbols':market.symbols }) # Passa os simbolos do mercado para o recurso
 
   base_url_subscriptions = base_clients_url + '/subscriptions'
+  api.add_resource(Subscriptions,
+                    base_url_subscriptions,
+                    base_url_subscriptions + '/stream',
+                    resource_class_kwargs={'symbols':market.symbols })
 
   app.run(debug=True)

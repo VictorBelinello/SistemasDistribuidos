@@ -2,6 +2,7 @@ import { handleMenuOption } from "./handleMenu.js";
 
 const symbolsArea = document.querySelector("textarea#symbols");
 const responseArea = document.querySelector("textarea#response");
+const notificationsArea = document.querySelector("textarea#notifications");
 const menuSelect = document.querySelector("select#menu");
 
 function fillSymbolsArea(data) {
@@ -9,6 +10,9 @@ function fillSymbolsArea(data) {
 }
 function fillResponseArea(data){
   fillTextArea(responseArea, data);
+}
+function fillNotificationsArea(data){
+  fillTextArea(notificationsArea, data);
 }
 
 function fillTextArea(area, data) {
@@ -24,4 +28,4 @@ menuSelect.addEventListener("change", () => {
 });
 
 
-export {fillSymbolsArea, fillResponseArea};
+export {fillSymbolsArea, fillResponseArea, fillNotificationsArea};

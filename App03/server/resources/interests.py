@@ -21,21 +21,21 @@ class Interests(restful.Resource):
   def post(self, id):
     if id not in self.interests:
       self.interests[id] = []
-    print(request)
-    print(request.get_data())
-    print(request.get_json())
-    print(j)
-    symbol = j['symbol']
+
+    symbol = request.form.get("symbol")
 
     if symbol not in self.market_symbols:
       return "Nothing done"
     self.interests[id].append( symbol )
-    return "Done"
+    return f"Post interest {symbol}"
 
-  def delete(self, id, symbol):
+  def delete(self, id):
     if id not in self.interests:
       return "Nothing done"
-    if symbol not in self.market_symbols:
+
+    symbol = request.form.get("symbol")
+
+    if symbol not in self.interests[id]:
       return "Nothing done"
     self.interests[id].remove( symbol )
     return "Done"
