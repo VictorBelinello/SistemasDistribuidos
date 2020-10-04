@@ -7,10 +7,30 @@
     <title>Client</title>
 </head>
 <body>
-    <button id="get_symbols">Get symbols</button>
-    <textarea id="symbols" cols="30" rows="10">
-
-    </textarea>
-    <script src="index.js"></script>
+    <div class="menu">
+        <header>Menu</header>
+        <select name="select" id="menu">
+            <option value="-1">Selecione uma opção</option>
+            <option value="1">Listar cotações</option>
+            <option value="2">Adicionar na lista cotações</option>
+            <option value="3">Remover da lista cotações</option>
+            <option value="0">Sair</option>
+        </select>
+    </div>
+    <div class="response-display">
+        <textarea id="response" cols="30" rows="10">
+        </textarea>
+    </div>
+    <div class="symbols-display">
+        <header>Símbolos disponíveis: </header>
+        <textarea id="symbols" cols="30" rows="10">
+        </textarea>
+    </div>
+    <div class="notifications-display">
+        <header>Notificações: </header>
+        <textarea id="notifications" cols="30" rows="10">
+        </textarea>
+    </div>
+    <script type="module" src="scripts/main.js"></script>
 </body>
 </html>

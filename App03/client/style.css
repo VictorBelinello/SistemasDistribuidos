@@ -1,0 +1,20 @@
+body{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 2fr 1fr;
+}
+
+.symbols-display{
+  grid-column-start: 2;
+  grid-row-end: 2;
+}
+
+.menu{
+  grid-column-start: 1;
+  grid-column-end: 2;
+}
+
+.notifications-display{
+  grid-column-start: 2;
+  grid-row-start: 2;
+}
