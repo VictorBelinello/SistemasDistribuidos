@@ -23,6 +23,9 @@ class Market(object):
     }
     threading.Thread(target=self.update_quotes, daemon=True).start()
 
+  def quote(self, symb):
+    return self.symbols[symb]
+
   def update_quotes(self):
     wait_time_max = 2
     while True:

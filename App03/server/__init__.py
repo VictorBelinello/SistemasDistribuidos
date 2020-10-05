@@ -13,4 +13,8 @@ app.register_blueprint(market_bp)
 from server.interests import interests_bp
 
 app.register_blueprint(interests_bp)
+
+from server.subscriptions import subscriptions_bp
+app.register_blueprint(subscriptions_bp)
+
     

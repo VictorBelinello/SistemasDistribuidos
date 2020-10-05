@@ -21,6 +21,10 @@ async function handleMenuOption(option) {
       removeInterest(user_id, symbol);
       break;
     case '4':
+      symbol = prompt("Informe o nome do símbolo").toUpperCase();
+      const lower = prompt("Limite de perda. Use '.' para separar casas decimais.");
+      const upper = prompt("Limite de ganho. Use '.' para separar casas decimais.");
+      addSubscription(user_id, symbol, lower, upper);
       break;
     case '5':
       break;

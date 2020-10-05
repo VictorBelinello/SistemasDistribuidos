@@ -12,16 +12,21 @@ function fillResponseArea(data){
   fillTextArea(responseArea, data);
 }
 function fillNotificationsArea(data){
-  fillTextArea(notificationsArea, data);
+  appendToTextArea(notificationsArea, data);
 }
 
 function fillTextArea(area, data) {
   area.value = "";
   for(const key in data){
-    area.value += key + " " + data[key] + "\n";
+    area.value += `${key}`.padEnd(4, ' ') + ": " + data[key] + "\n";
   }
 }
 
+function appendToTextArea(area, data) {
+  for(const key in data){
+    area.value += `${key}`.padEnd(4, ' ') + ": " + data[key] + "\n";
+  }
+}
 
 menuSelect.addEventListener("change", () => {
   handleMenuOption(menuSelect.value)

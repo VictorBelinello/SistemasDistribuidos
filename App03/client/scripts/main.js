@@ -10,18 +10,20 @@ function uuidv4() {
   });
 }
 const user_id = uuidv4();
+const streamURL = baseURL + `subscriptions/${user_id}/stream`;
+let eventSource = new EventSource(streamURL);
 
 async function updateSymbolsArea(){
   const data = await getAllSymbols();
   fillSymbolsArea(data);
 }
 
-function main(){
-  //setInterval(updateSymbolsArea, 2000);
-  updateSymbolsArea();
+setInterval(updateSymbolsArea, 2000);
+
+eventSource.onmessage = function (event) {
+  fillNotificationsArea({message:event.data});
 }
 
-main();
 
 export {user_id};
 
