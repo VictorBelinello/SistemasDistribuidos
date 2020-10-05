@@ -34,7 +34,7 @@ def delete(id):
   if id not in INTERESTS:
     return {"status": "DELETE not done", "data": f"Requested by {id}"}
 
-  data = get_data(request, id)
+  data = get_data(request)
 
   if data['symbol'] not in INTERESTS[id]:
       abort(404, description=f"Symbol {data['symbol']} not found on interests.")

@@ -3,7 +3,7 @@ from flask import abort
 
 from .market import default_market
 
-def get_data(request, id=None):
+def get_data(request):
   # Pega json do request
   if not request.is_json:
     data = json.loads(request.get_data())
