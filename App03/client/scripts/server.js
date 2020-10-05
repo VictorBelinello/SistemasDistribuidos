@@ -1,26 +1,25 @@
-const baseURL = "http://localhost:5000";
+const baseURL = "http://localhost:5000/";
 
-async function getDataFromServer(url) {
+async function getJSONFromServer(url) {
   // Obtem json do servidor baseado na url
   try {
     const response = await fetch(url);
     const res = await response.json();
-    return res;
+    console.log("Server response: ", res['status']);
+    return res['data'];
   } catch (error) {
-    console.log(url);   
-    console.log(error);
+    console.log("Error trying to get data from server");
   }
 }
 
-async function sendDataToServer(url, data){
+async function sendJSONToServer(url, data){
   try {
     const response = await fetch(url, {method: 'POST',
     body: data});
     const res = await response.json();
-    console.log(res);
+    console.log("Server response: ", res['status']);
   } catch (error) {
-    console.log(url);   
-    console.log(error);
+    console.log("Error trying to send data to server");
   }
 }
 
@@ -29,53 +28,51 @@ async function removeDataFromServer(url, data){
     const response = await fetch(url, {method: 'DELETE',
     body: data});
     const res = await response.json();
-    console.log(res);
+    console.log("Server response: ", res['status']);
   } catch (error) {
-    console.log(url);   
-    console.log(error);
+    console.log("Error trying to remove data from server");
   }
 }
 
 function addInterest(id, symbol){
-  const url = new URL(baseURL + `/clients/${id}/interests`);
-  const data = new FormData();
-  data.append("symbol", symbol);
+  const url = new URL(baseURL + `interests/${id}`);
+  const data = {symbol: symbol};
+  const json = JSON.stringify(data);
 
-  sendDataToServer(url, data);
+  sendJSONToServer(url, json);
 }
 
 async function getInterests(id){
-  const url = new URL(baseURL + `/clients/${id}/interests`);
-  const interests = await getDataFromServer(url);
+  const url = new URL(baseURL + `interests/${id}`);
+  const interests = await getJSONFromServer(url);
+
   return interests;
 }
 
 function removeInterest(id, symbol){
-  const url = new URL(baseURL + `/clients/${id}/interests`);
-  const data = new FormData();
-  data.append("symbol", symbol);
-  
-  removeDataFromServer(url, data);
+  const url = new URL(baseURL + `interests/${id}`);
+  const data = {symbol: symbol};
+  const json = JSON.stringify(data);
+
+  removeDataFromServer(url, json);
 }
 
 function addSubscription(id, symbol, lower, upper){
-  const url = new URL(baseURL + `/clients/${id}/subscriptions`);
-  const data = new FormData();
-  data.append("symbol", symbol);
-  data.append("lower", lower);
-  data.append("upper", upper);
-
-  sendDataToServer(url, data);
+  const url = new URL(baseURL + `subscriptions/${id}`);
+  const data = {symbol: symbol, lower: lower, upper: upper};
+  const json = JSON.stringify(data);
+  
+  sendJSONToServer(url, json);
 }
 async function getSubscriptions(id){
-  const url = new URL(baseURL + `/clients/${id}/subscriptions`);
-  const subs = await getDataFromServer(url);
+  const url = new URL(baseURL + `subscriptions/${id}`);
+  const subs = await getJSONFromServer(url);
   return subs;
 }
 async function getAllSymbols() {
   // Pega todos os simbolos disponiveis, em formato json
   const url = new URL(baseURL);
-  return getDataFromServer(url);
+  return getJSONFromServer(url);
 }
 
 
