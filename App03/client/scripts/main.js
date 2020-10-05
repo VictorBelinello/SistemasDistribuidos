@@ -9,6 +9,7 @@ function uuidv4() {
     return v.toString(16);
   });
 }
+const user_id = uuidv4();
 
 async function updateSymbolsArea(){
   const data = await getAllSymbols();
@@ -18,18 +19,8 @@ async function updateSymbolsArea(){
 function main(){
   //setInterval(updateSymbolsArea, 2000);
   updateSymbolsArea();
-  console.log("OK");
-  eventSource.onmessage = (e) => {
-    console.log(e.data);
-    fillNotificationsArea({'data': e.data})
-  }
 }
 
-
-
-const user_id = uuidv4();
-console.log(user_id);
-const eventSource = new EventSource(baseURL+`/clients/${user_id}/subscriptions/stream`);
 main();
 
 export {user_id};
