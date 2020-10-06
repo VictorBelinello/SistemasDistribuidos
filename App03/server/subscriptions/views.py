@@ -6,12 +6,6 @@ from . import subscriptions_bp
 from server.common import get_data, make_response
 
 SUBSCRIPTIONS = {}
-@subscriptions_bp.route('/stream', methods=['GET'])
-def stream(id):
-  if id not in SUBSCRIPTIONS:
-    SUBSCRIPTIONS[id] = []
-  response = Response(check_subscriptions(id), mimetype="text/event-stream")
-  return response
 
 
 def should_notify(subscription):
@@ -33,6 +27,13 @@ def check_subscriptions(id):
         # Remove inscricao do evento
         SUBSCRIPTIONS[id].remove(subscription)
         yield response
+        
+@subscriptions_bp.route('/stream', methods=['GET'])
+def stream(id):
+  if id not in SUBSCRIPTIONS:
+    SUBSCRIPTIONS[id] = []
+  response = Response(check_subscriptions(id), mimetype="text/event-stream")
+  return response
 
 @subscriptions_bp.route('', methods=['POST'])
 def post(id):

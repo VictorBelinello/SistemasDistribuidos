@@ -7,7 +7,7 @@ function getStock() {
   const amount = prompt("Quantidade de ações");
   const price =  prompt("Preço alvo. Use '.' para separar casas decimais.");
   const timeout =  prompt("Quanto tempo deseja manter a ação em estado condicional?");
-  const data = {symbol:symbol, amount:amount, price:price, timeout:timeout};
+  const data = {owner:user_id, symbol:symbol, amount:amount, price:price, timeout:timeout};
   return data;
 }
 

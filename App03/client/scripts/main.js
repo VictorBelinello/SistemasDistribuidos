@@ -1,4 +1,4 @@
-import { getAllSymbols, baseURL } from './server.js';
+import { getAllSymbols, getStocks, baseURL } from './server.js';
 import { fillSymbolsArea, fillNotificationsArea } from './handleDOM.js';
 
 
@@ -24,6 +24,8 @@ eventSource.onmessage = function (event) {
   fillNotificationsArea({message:event.data});
 }
 
+// Chama uma vez inicialmente para obter acoes iniciais
+getStocks(user_id);
 
 export {user_id};
 
