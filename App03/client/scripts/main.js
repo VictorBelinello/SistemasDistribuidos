@@ -10,8 +10,10 @@ function uuidv4() {
   });
 }
 const user_id = uuidv4();
-const streamURL = baseURL + `subscriptions/${user_id}/stream`;
-let eventSource = new EventSource(streamURL);
+const notifyStreamURL = baseURL + `subscriptions/${user_id}/stream`;
+const transactionStreamURL = baseURL + `transactions/${user_id}/stream`;
+let notificationsSource = new EventSource(notifyStreamURL);
+let transactionsSource = new EventSource(transactionStreamURL);
 
 async function updateSymbolsArea(){
   const data = await getAllSymbols();
@@ -20,7 +22,12 @@ async function updateSymbolsArea(){
 
 //setInterval(updateSymbolsArea, 2000);
 
-eventSource.onmessage = function (event) {
+notificationsSource.onmessage = function (event) {
+  fillNotificationsArea({message:event.data});
+}
+
+transactionsSource.onmessage = function (event) {
+  console.log(event);
   fillNotificationsArea({message:event.data});
 }
 

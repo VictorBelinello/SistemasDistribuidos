@@ -23,7 +23,7 @@ def check_subscriptions(id):
     for subscription in SUBSCRIPTIONS[id]:
       if should_notify(subscription):
         symb = subscription['symbol']
-        response = f'data: {symb} atingiu {default_market.quote(symb)}\n\n'
+        response = f'data: {symb} @ {default_market.quote(symb)}\n\n'
         # Remove inscricao do evento
         SUBSCRIPTIONS[id].remove(subscription)
         yield response
