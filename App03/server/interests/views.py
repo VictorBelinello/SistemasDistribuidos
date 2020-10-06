@@ -5,7 +5,7 @@ from . import interests_bp
 
 INTERESTS = {}
 
-from server.common import get_data
+from server.common import get_data, make_response
 
 @interests_bp.route('', methods=['GET'])
 def get(id):
@@ -15,30 +15,34 @@ def get(id):
   response = {}
   for symb in INTERESTS[id]:
     response[symb] = default_market.symbols[symb]
-  return {"status":"GET successful","data": response}
+  return make_response(200, response)
 
 @interests_bp.route('', methods=['POST'])
 def post(id):
   if id not in INTERESTS:
     INTERESTS[id] = []
 
-  data = get_data(request)
-
+  status, data = get_data(request)
+  if status != 200:
+    return make_response(status, data)
+    
   data['quote'] = default_market.symbols[data['symbol']]
   # Adiciona symbol na lista de cotacoes do usuario 'id'
   INTERESTS[id].append(data['symbol'])
-  return {"status":"POST successful","data":data}
+  return  make_response(200, '')
 
 @interests_bp.route('', methods=['DELETE'])
 def delete(id):
   if id not in INTERESTS:
-    return {"status": "DELETE not done", "data": f"Requested by {id}"}
+    return make_response(404,"You have no interests registered yet.")
 
-  data = get_data(request)
+  status, data = get_data(request)
+  if status != 200:
+    return make_response(status, data)
 
   if data['symbol'] not in INTERESTS[id]:
-      abort(404, description=f"Symbol {data['symbol']} not found on interests.")
+      return make_response(404, f"Symbol {data['symbol']} not found on interests.") 
 
   INTERESTS[id].remove(data['symbol'])
-  return {"status":"DELETE successful","data":data['symbol']}
+  return make_response(status, data['symbol'])
   

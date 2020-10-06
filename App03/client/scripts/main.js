@@ -18,7 +18,7 @@ async function updateSymbolsArea(){
   fillSymbolsArea(data);
 }
 
-setInterval(updateSymbolsArea, 2000);
+//setInterval(updateSymbolsArea, 2000);
 
 eventSource.onmessage = function (event) {
   fillNotificationsArea({message:event.data});

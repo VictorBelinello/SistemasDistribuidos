@@ -3,7 +3,7 @@ from flask import abort, Response, request
 from ..market import default_market
 from . import subscriptions_bp
 
-from server.common import get_data
+from server.common import get_data, make_response
 
 SUBSCRIPTIONS = {}
 @subscriptions_bp.route('/stream', methods=['GET'])
@@ -39,9 +39,10 @@ def post(id):
   if id not in SUBSCRIPTIONS:
     SUBSCRIPTIONS[id] = []
 
-  data = get_data(request)
-
+  status, data = get_data(request)
+  if status != 200:
+    return make_response(status, data)
   # Adiciona data na lista de inscricoes do usuario 'id'
   SUBSCRIPTIONS[id].append(data)
-  return {"status":"POST successful","data":data}
+  return make_response(200, data)
 

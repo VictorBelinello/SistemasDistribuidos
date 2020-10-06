@@ -26,17 +26,21 @@ class Market(object):
   def quote(self, symb):
     return self.symbols[symb]
 
+  def get_random_symbols(self):
+    # Pega todos os simbolos disponiveis
+    keys = list(self.symbols.keys())
+    # Escolhe uma quantidade 
+    k = random.randint(0, len(keys))
+    # Escolhe k simbolos, sem repeticao
+    #TODO:TIRAR DEPOIS
+    k = len(keys)
+    symbols = random.sample(keys, k=k)
+    return symbols
+
   def update_quotes(self):
     wait_time_max = 2
     while True:
-      # Pega todos os simbolos disponiveis
-      keys = list(self.symbols.keys())
-      # Escolhe uma quantidade 
-      k = random.randint(0, len(keys))
-      # Escolhe k simbolos, sem repeticao
-      #TODO:TIRAR DEPOIS
-      k = len(keys)
-      symbols = random.sample(keys, k=k)
+      symbols = self.get_random_symbols()
       for s in symbols:
         # Escolhe uma cotação
         val = random_quote()
