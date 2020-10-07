@@ -1,4 +1,4 @@
-import { getAllSymbols, getStocks, baseURL } from './server.js';
+import { getAllSymbols, getStocks, getBuyTransactions, getSellTransactions, baseURL } from './server.js';
 import { fillSymbolsArea, fillNotificationsArea } from './handleDOM.js';
 
 
@@ -10,29 +10,21 @@ function uuidv4() {
   });
 }
 const user_id = uuidv4();
-const notifyStreamURL = baseURL + `subscriptions/${user_id}/stream`;
-const transactionStreamURL = baseURL + `transactions/${user_id}/stream`;
-let notificationsSource = new EventSource(notifyStreamURL);
-let transactionsSource = new EventSource(transactionStreamURL);
+// Chama uma vez inicialmente para obter acoes iniciais
+getStocks(user_id);
+
+// Abre uma conexao para as notificacoes
+const streamURL = baseURL + `listen/${user_id}`;
+let eventSource = new EventSource(streamURL);
+eventSource.onmessage = function (event) {
+  fillNotificationsArea({message:event.data});
+}
 
 async function updateSymbolsArea(){
   const data = await getAllSymbols();
   fillSymbolsArea(data);
 }
-
-//setInterval(updateSymbolsArea, 2000);
-
-notificationsSource.onmessage = function (event) {
-  fillNotificationsArea({message:event.data});
-}
-
-transactionsSource.onmessage = function (event) {
-  console.log(event);
-  fillNotificationsArea({message:event.data});
-}
-
-// Chama uma vez inicialmente para obter acoes iniciais
-getStocks(user_id);
+setInterval(updateSymbolsArea, 2000);
 
 export {user_id};
 

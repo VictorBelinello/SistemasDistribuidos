@@ -1,7 +1,7 @@
 body{
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 2fr 1fr;
+  grid-template-rows: 1fr 2fr 2fr;
 }
 
 .symbols-display{
@@ -12,12 +12,13 @@ body{
 .menu{
   grid-column-start: 1;
   grid-column-end: 2;
+  grid-row-end: 2;
 }
 
 .response-display{
   grid-row-start: 2;
+  grid-row-end: 3;
 }
-
 .notifications-display{
   grid-column-start: 2;
   grid-row-start: 2;

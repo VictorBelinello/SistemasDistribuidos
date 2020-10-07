@@ -1,4 +1,4 @@
-import { addInterest, getInterests, removeInterest, addSubscription, getStocks, buyStock, sellStock } from './server.js';
+import { addInterest, getInterests, removeInterest, addSubscription, getStocks, buyStock, sellStock, getBuyTransactions, getSellTransactions } from './server.js';
 import { fillResponseArea } from './handleDOM.js';
 import { user_id } from "./main.js";
 
@@ -43,9 +43,11 @@ async function handleMenuOption(option) {
       break;
     case '6':
       buyStock(user_id, getStock());
+      getBuyTransactions(user_id);
       break;
     case '7':
       sellStock(user_id, getStock());
+      getSellTransactions(user_id);
       break;
     default:
       break;

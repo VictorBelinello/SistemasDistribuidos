@@ -2,7 +2,6 @@ import random
 import threading
 import time
 
-
 def random_quote():
   """Retorna uma valor de cotação entre 5 e 150, com duas casas decimais."""
   return round( random.uniform(5, 150), 2)
@@ -25,22 +24,21 @@ class Market(object):
 
   def quote(self, symb):
     return self.symbols[symb]
-
-  def get_random_symbols(self):
+    
+  @staticmethod
+  def get_random_symbols(symbols):
     # Pega todos os simbolos disponiveis
-    keys = list(self.symbols.keys())
+    keys = list(symbols.keys())
     # Escolhe uma quantidade 
     k = random.randint(0, len(keys))
     # Escolhe k simbolos, sem repeticao
-    #TODO:TIRAR DEPOIS
-    k = len(keys)
     symbols = random.sample(keys, k=k)
     return symbols
 
   def update_quotes(self):
     wait_time_max = 2
     while True:
-      symbols = self.get_random_symbols()
+      symbols = Market.get_random_symbols(self.symbols)
       for s in symbols:
         # Escolhe uma cotação
         val = random_quote()
@@ -48,11 +46,3 @@ class Market(object):
         self.symbols[s] = val
       # Espera tempo antes de atualizar novamente
       time.sleep(wait_time_max)
-
-default_market = Market()
-
-from flask import Blueprint
-
-market_bp = Blueprint("market", __name__)
-
-from . import views

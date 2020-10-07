@@ -1,33 +1,40 @@
 const baseURL = "http://localhost:5000/";
 
-function handleServerResponse(res){
-  if (res['status'] != '200') {
-    alert("Problem with server response");
-    alert(res['data']);
-  } else {
-    console.log("Server response OK.");
+async function handleServerResponse(res){
+  if (res['status'] === 204) {
+    // Resposta deu certo, mas nao tem body so retorna
+    return;
   }
+  // Tem body/json
+  const json = await res.json();
+  if (res['status'] !== 200) {
+    // Problema na resposta
+    if('error_message' in json){
+      alert("Error: " + json['error_message'])
+      return;
+    }
+  }
+  // Sem problema com resposta, retorna payload
+  return json['data'];
 }
 
 async function getJSONFromServer(url) {
   // Obtem json do servidor baseado na url
   try {
     const response = await fetch(url);
-    const res = await response.json();
-    handleServerResponse(res);
-    return res['data'];
+    const data = handleServerResponse(response);
+    return data;
   } catch (error) {
     console.log("Error trying to get data from server");
   }
 }
 
-async function postJSONToServer(url, data){
+async function putJSONToServer(url, data){
   try {
-    const response = await fetch(url, {method: 'POST',
+    const response = await fetch(url, {method: 'PUT',
     headers: {"Content-Type": "application/json"},
     body: data});
-    const res = await response.json();
-    handleServerResponse(res)
+    handleServerResponse(response);
   } catch (error) {
     console.log("Error trying to send data to server");
   }
@@ -38,8 +45,7 @@ async function removeDataFromServer(url, data){
     const response = await fetch(url, {method: 'DELETE',
     headers: {"Content-Type": "application/json"},
     body: data});
-    const res = await response.json();
-    handleServerResponse(res)
+    handleServerResponse(response);
   } catch (error) {
     console.log("Error trying to remove data from server");
   }
@@ -50,7 +56,7 @@ function addInterest(id, symbol){
   const data = {symbol: symbol};
   const json = JSON.stringify(data);
 
-  postJSONToServer(url, json);
+  putJSONToServer(url, json);
 }
 
 async function getInterests(id){
@@ -64,7 +70,6 @@ function removeInterest(id, symbol){
   const url = new URL(baseURL + `interests/${id}`);
   const data = {symbol: symbol};
   const json = JSON.stringify(data);
-
   removeDataFromServer(url, json);
 }
 
@@ -73,7 +78,7 @@ function addSubscription(id, symbol, lower, upper){
   const data = {symbol: symbol, lower: lower, upper: upper};
   const json = JSON.stringify(data);
   
-  postJSONToServer(url, json);
+  putJSONToServer(url, json);
 }
 
 async function getSubscriptions(id){
@@ -91,14 +96,14 @@ async function getStocks(id){
 function buyStock(id, data) {
   const url = new URL(baseURL + `transactions/${id}/buy`);
   const json = JSON.stringify(data);
-  postJSONToServer(url, json);
+  putJSONToServer(url, json);
 }
 
 function sellStock(id, data) {
   const url = new URL(baseURL + `transactions/${id}/sell`);
   const json = JSON.stringify(data);
 
-  postJSONToServer(url, json);
+  putJSONToServer(url, json);
 }
 
 async function getAllSymbols() {
@@ -107,8 +112,20 @@ async function getAllSymbols() {
   return getJSONFromServer(url);
 }
 
+async function getBuyTransactions(id) {
+  const buyURL = new URL(baseURL + `transactions/${id}/buy`);
+  return getJSONFromServer(buyURL);
+}
+
+async function getSellTransactions(id) {
+  const sellURL = new URL(baseURL + `transactions/${id}/sell`);
+  return getJSONFromServer(sellURL);
+}
+
+
 
 export {getAllSymbols, baseURL,
         addInterest, getInterests, removeInterest,
         addSubscription, getSubscriptions,
-        getStocks, buyStock, sellStock};
+        getStocks, buyStock, sellStock,
+        getBuyTransactions, getSellTransactions};

@@ -15,11 +15,10 @@ function fillNotificationsArea(data){
   appendToTextArea(notificationsArea, data);
 }
 
+
 function fillTextArea(area, data) {
   area.value = "";
-  for(const key in data){
-    area.value += `${key}`.padEnd(4, ' ') + ": " + data[key] + "\n";
-  }
+  appendToTextArea(area, data);
 }
 
 function appendToTextArea(area, data) {
