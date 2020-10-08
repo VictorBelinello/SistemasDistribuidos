@@ -5,15 +5,23 @@ from server_rest.util.requests import abort_if, ERRORS, verify
 
 class InterestsView(Resource):
   interests = {}
-  def __init__(self, symbols):
+  def __init__(self, symbols, transactions):
     self.available_symbols = symbols
+    self.transactions = transactions
 
   def get(self, id):
     if id not in self.interests:
       self.interests[id] = {}
+    
     for symb in self.interests[id]:
       self.interests[id][symb] = self.available_symbols[symb]
-    return {'data': self.interests[id]}
+    
+    from_stocks = {}
+    for symb in self.transactions.clients_stocks[id]:
+      from_stocks[symb] = self.available_symbols[symb]
+    # Combina os dois dicts
+    response = {**from_stocks, **self.interests[id]}
+    return {'data': response}
 
   def put(self, id):
     if id not in self.interests:

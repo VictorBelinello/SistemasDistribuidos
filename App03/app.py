@@ -21,17 +21,17 @@ m = Market()
 # Ou seja Subscriptions e Transactions
 # As chaves sao os ids dos usuarios
 announcers = {}
+transactions = Transactions(m.symbols, announcers)
 
 api.add_resource(MarketView, '/',
 resource_class_kwargs={'symbols': m.symbols})
 
 api.add_resource(InterestsView, '/interests/<string:id>',
-resource_class_kwargs={'symbols': m.symbols})
+resource_class_kwargs={'symbols': m.symbols, 'transactions': transactions})
 
 api.add_resource(SubscriptionsView, '/subscriptions/<string:id>',
 resource_class_kwargs={'symbols': m.symbols, 'announcers': announcers})
 
-transactions = Transactions(m.symbols, announcers)
 
 base_route = '/transactions/<string:id>'
 api.add_resource(TransactionsView, base_route, base_route + '/buy', base_route + '/sell',

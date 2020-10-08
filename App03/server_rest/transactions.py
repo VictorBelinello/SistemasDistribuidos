@@ -35,7 +35,7 @@ class TransactionsView(Resource):
       symb = transaction['symbol']
       amount = int(transaction['amount'])
       if symb in self.transactions.clients_stocks[id]:
-        if amount == self.transactions.clients_stocks[id][symb]:
+        if amount <= self.transactions.clients_stocks[id][symb]:
           self.transactions.transactions['sell'].append(transaction)
         else:
           abort_if(ERRORS.RESOURCE_NOT_FOUND, f"You don't have enough stocks of {symb}")

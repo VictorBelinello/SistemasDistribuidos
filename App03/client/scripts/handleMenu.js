@@ -13,7 +13,7 @@ function getStock() {
 
 async function handleMenuOption(option) {
   let symbol = "";
-
+  let stocks = "";
   switch (option) {
     case '0':
       alert("Flws");
@@ -38,7 +38,7 @@ async function handleMenuOption(option) {
       addSubscription(user_id, symbol, lower, upper);
       break;
     case '5':
-      const stocks = await getStocks(user_id);
+      stocks = await getStocks(user_id);
       fillResponseArea(stocks);
       break;
     case '6':
