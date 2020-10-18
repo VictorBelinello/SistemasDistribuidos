@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <title>Client</title>
+</head>
+
+<body>
+  <div class="menu">
+    <header>Menu</header>
+    <select name="select" id="menu">
+      <option value="-1">Selecione uma opção</option>
+      <option value="1">Listar cotações</option>
+      <option value="2">Adicionar na lista cotações</option>
+      <option value="3">Remover da lista cotações</option>
+      <option value="4">Adicionar inscrição para evento</option>
+      <option value="5">Ver suas ações</option>
+      <option value="6">Comprar ações</option>
+      <option value="7">Vender ações</option>
+    </select>
+  </div>
+  <div class="response-display">
+    <textarea id="response" cols="30" rows="10" readonly></textarea>
+  </div>
+  <div class="symbols-display">
+    <header>Símbolos disponíveis: </header>
+    <textarea id="symbols" cols="30" rows="10" readonly></textarea>
+  </div>
+  <div class="notifications-display">
+    <header>Notificações: </header>
+    <textarea id="notifications" cols="30" rows="10" readonly></textarea>
+  </div>
+  <script type="module" src="scripts/main.js"></script>
+</body>
+
+</html>
