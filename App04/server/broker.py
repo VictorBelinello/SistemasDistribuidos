@@ -64,6 +64,8 @@ class Broker(object):
       for stock in items:
         symb = stock[0]
         response['data'][symb] = stock[1]
+    elif topic == 'transactions':
+      print("Transactions")
     return response
 
   def addTo(self, topic : str, msg : dict) -> dict:
