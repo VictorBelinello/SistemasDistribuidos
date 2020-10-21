@@ -16,6 +16,7 @@ m = Market()
 api.add_resource(Server,
                   '/<string:client_id>/',
                   '/<string:client_id>/<string:topic>/',
+                  '/<string:client_id>/listen/<string:topic>/',
                   resource_class_kwargs={'market': m})
 
 if __name__ == "__main__":

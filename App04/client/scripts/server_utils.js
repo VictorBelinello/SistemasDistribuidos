@@ -70,7 +70,7 @@ export function removeFromTopic(topic, data){
 }
 
 export function subToTopic(topic, onMessage){
-  const url = baseURL + topic;
+  const url = baseURL + '/listen' + topic;
   const eventSource = new EventSource(url);
   eventSource.onmessage = onMessage;
 }

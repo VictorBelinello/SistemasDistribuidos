@@ -12,7 +12,7 @@ async function main() {
   }
 
   const notificationsArea = document.querySelector("textarea#notifications");
-  subToTopic('/listen_subscriptions', (event) => {
+  subToTopic('/subscriptions', (event) => {
     notificationsArea.value += event.data + '\n';
   });
 
