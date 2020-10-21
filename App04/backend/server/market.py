@@ -31,6 +31,8 @@ class Market(object):
     keys = list(symbols.keys())
     # Escolhe uma quantidade 
     k = random.randint(0, len(keys))
+    #TODO: corrigir depois
+    k = len(keys)
     # Escolhe k simbolos, sem repeticao
     sampled_symbols = random.sample(keys, k=k)
     return sampled_symbols
