@@ -1,18 +1,20 @@
 from ..model.clientModel import ClientModel
-from flask import request
+from flask import request, Response
 
 class ClientController(object):
-  TOPICS = ['quotes', 'subscriptions']
+  TOPICS = ['quotes', 'subscriptions', 'listen_subscriptions', 'stocks']
   def __init__(self, model : ClientModel):
     self.model = model
 
   def get(self, topic : str):
     if topic == 'quotes':
-      quotes = self.model.get_quotes()
-      return {'data': quotes}
+      return {'data': self.model.get_quotes()}
     if topic == 'subscriptions':
-      subs = self.model.get_subscriptions()
-      return {'data': subs}
+      return {'data': self.model.get_subscriptions()}
+    if topic == 'listen_subscriptions':
+      return Response(self.model.check_subscriptions(), mimetype='text/event-stream')
+    if topic == 'stocks':
+      return {'data': self.model.get_stocks()}
     return {'error': f'BAD ROUTE /{topic}'}
 
   def put(self, topic : str):

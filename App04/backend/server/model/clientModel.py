@@ -35,11 +35,11 @@ class ClientModel(object):
       return (False, f"Symbol {symbol} already on your quotes")
     return (False, f"Couldn't find symbol {symbol} on market symbols")
 
-  def add_subscription(self, symbol : str, lower : float, upper : float) -> tuple:
+  def add_subscription(self, symbol : str, lower : str, upper : str) -> tuple:
     if self.check_symbol(symbol):
       if not lower or not upper:
         return (False, f"Subscription not complete, missing limit")
-      sub = (symbol, lower, upper)
+      sub = (symbol, float(lower), float(upper))
       self.subscriptions.append( sub )
       return (True, None)
     return (False, f"Couldn't find symbol {symbol} on market symbols")
@@ -47,6 +47,9 @@ class ClientModel(object):
   def get_quotes(self) -> dict:
     res = {}
     for symb in self.quotes:
+      res[symb] = self.market.quote(symb)
+    for stock in self.broker.stocks:
+      symb = stock[0]
       res[symb] = self.market.quote(symb)
     return res
 
@@ -56,14 +59,20 @@ class ClientModel(object):
       res[sub[0]] = (sub[1], sub[2])
     return res 
 
+  def get_stocks(self) -> dict:
+    res = {}
+    for stock in self.broker.stocks:
+      res[stock[0]] = stock[1]
+    return res
+
   def del_quote(self, symbol : str) -> tuple:
     if symbol in self.quotes:
       self.quotes.remove(symbol)
       return (True, None)
     return (False, f"Couldn't find symbol {symbol} on your quotes")
 
-  def del_subscription(self, symbol : str, lower : float, upper : float) -> tuple:
-    sub = (symbol, lower, upper)
+  def del_subscription(self, symbol : str, lower : str, upper : str) -> tuple:
+    sub = (symbol, float(lower), float(upper))
     if sub in self.subscriptions:
       self.subscriptions.remove(sub)
       return (True, None)
