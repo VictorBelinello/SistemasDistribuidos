@@ -1,10 +1,16 @@
-from ..model.clientModel import ClientModel
+from server.model.clientModel import ClientModel
 from flask import request, Response
 
 class ClientController(object):
   TOPICS = ['quotes', 'subscriptions', 'listen', 'stocks', 'buy_stocks']
   def __init__(self, model : ClientModel):
     self.model = model
+
+  def error(self, what : str, reason : str = 'None'):
+    return {'error': {'what': what, 'reason': reason}}
+  
+  def route_error(self):
+    return self.error('Bad route', f'{request.path} not found')
 
   def get(self, topic : str):
     # /id/quotes
@@ -19,26 +25,32 @@ class ClientController(object):
     # /id/stocks
     if topic == 'stocks':  
       return {'data': self.model.get_stocks()}
-    return {'error': f'BAD ROUTE {request.path}'}
+    return self.route_error()
 
   def put(self, topic : str):
-    json : dict = request.get_json()
+    try:
+      json : dict = request.get_json()
+    except Exception as e:
+      return self.error('Failed to get JSON from request'), 400
     if topic == 'quotes':
       ok, reason = self.model.add_quote(json.get('symbol'))
-      return  ({'data': json}, 201) if ok else ({'error': f'PUT failed, reason: {reason}'}, 400)
+      return  ({'data': json}, 201) if ok else (self.error('PUT failed', reason), 400)
     if topic == 'subscriptions':
       ok, reason = self.model.add_subscription(json.get('symbol'), json.get('lower'), json.get('upper'))
-      return  ({'data': json}, 201) if ok else ({'error': f'PUT failed, reason: {reason}'}, 400)
+      return  ({'data': json}, 201) if ok else (self.error('PUT failed', reason), 400)
     if topic == 'buy_stocks':
       ok, reason = self.model.add_buy
-    return {'error': f'BAD ROUTE {request.path}'}
+    return self.route_error()
 
   def delete(self, topic : str):
-    json : dict = request.get_json()
+    try:
+      json : dict = request.get_json()
+    except Exception:
+      return self.error('Failed to get JSON from request'), 400
     if topic == 'quotes':
       ok, reason = self.model.del_quote(json.get('symbol'))
-      return ({}, 204) if ok  else ({'error': f'DELETE failed, reason: {reason}'}, 400)
+      return ({}, 204) if ok  else (self.error('DELETE failed', reason), 400)
     if topic == 'subscriptions':
       ok, reason = self.model.del_subscription(json.get('symbol'), json.get('lower'), json.get('upper'))
-      return  ({}, 204) if ok else ({'error': f'DELETE failed, reason: {reason}'}, 400)
-    return {'error': f'BAD ROUTE {request.path}'}
+      return  ({}, 204) if ok else (self.error('DELETE failed', reason), 400)
+    return self.route_error()

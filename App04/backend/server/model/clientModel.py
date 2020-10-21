@@ -1,17 +1,17 @@
-from ..market import Market
+from server.market import Market
 from .brokerModel import BrokerModel
 
 class ClientModel(object):
   def __init__(self, market : Market):
     self.market = market
 
-    self.quotes = []
-    self.subscriptions = []
+    self.quotes : list = []
+    self.subscriptions : list = []
     self.broker = BrokerModel(self.market)
-    self.transactions = []
+    self.transactions : list = []
   
   def check_symbol(self, symbol : str) -> bool:
-    return symbol and symbol in self.market.symbols
+    return symbol in self.market.symbols
 
   def check_subscriptions(self):
     while True:
