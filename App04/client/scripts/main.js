@@ -11,6 +11,7 @@ async function main() {
     symbolsArea.value += key + '\n';
   }
 
+  // Subscreve cliente no topico /subscriptions, passando a funcao para lidar com o evento
   const notificationsArea = document.querySelector("textarea#notifications");
   subToTopic('/subscriptions', (event) => {
     notificationsArea.value += event.data + '\n';

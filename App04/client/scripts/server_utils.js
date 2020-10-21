@@ -22,7 +22,9 @@ async function handleServerResponse(res){
 
   // Problema na resposta
   if('error' in json){
-    alert("Error: " + json['error'])
+    const what = json['error']['what'];
+    const reason = json['error']['reason'];
+    alert(`Error: ${what}\nReason: ${reason}`);
     return {};
   }
   
@@ -38,7 +40,8 @@ async function fetchServer(url, reqInit) {
     const res = handleServerResponse(response);
     return res;
   } catch (error) {
-    console.log("Error trying to get data from server");
+    console.log("Error trying to fetch server");
+    console.log(error);
   }
 }
 
