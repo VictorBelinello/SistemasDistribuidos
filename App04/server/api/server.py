@@ -7,7 +7,7 @@ from api.clientModel import ClientModel
 from api.clientController import ClientController
 from api.market import Market
 from api.brokerModel import BrokerModel
-from api.transaction import Transaction
+from api.transaction.transaction import Transaction
 
 class BrokerServer(object):
   # Normalmente esse recurso ficaria em outro servidor, mas para facilitar aqui esta tudo junto, apenas separado em classes
@@ -37,7 +37,8 @@ class BrokerServer(object):
     json : dict = request.get_json()
     # O coordenador esta enviando put request para um broker especifico (o outro participante)
     target_broker = self.brokers.get(id)
-    print(f"{target_broker.client_id} should prepare transaction {json.get('tid')}")
+    if target_broker:
+      print(f"{target_broker.client_id} should prepare transaction {json.get('tid')}")
     # Agora os dois brokers tem a transacao na lista e o protocolo pode iniciar
     return {'data': json}
 

@@ -3,7 +3,7 @@ from typing import Optional
 import requests
 
 from .market import Market
-from .transaction import Transaction
+from .transaction.transaction import Transaction
 
 from .brokerInterface import BrokerInterface
 
@@ -55,7 +55,7 @@ class BrokerModel(object):
         if not owned or owned[0] < amount:
           # Nao tenhuma acao de 'symbol' ou nao tem quantidade suficiente
           raise AttributeError(0 if not owned else owned[0])
-      order = [operation, symbol, float(price), int(amount), int(timeout), self.client_id]
+      order = (operation, symbol, float(price), int(amount), int(timeout), self.client_id)
       self.orders.append(order)
       self.check_orders(order)
       return (True, None)
