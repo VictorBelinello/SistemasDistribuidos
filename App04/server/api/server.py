@@ -30,16 +30,16 @@ class BrokerServer(object):
 
     seller = self.brokers.get(json.get('seller'))
     seller.add_transaction(t)
-
+    # Agora os dois brokers tem a transacao na lista e o protocolo pode iniciar
+    buyer.begin_transaction(t.tid)
     return {'data': json}
 
   def prepare_transaction(self, id : str):
-    json : dict = request.get_json()
     # O coordenador esta enviando put request para um broker especifico (o outro participante)
+    json : dict = request.get_json()
     target_broker = self.brokers.get(id)
     if target_broker:
-      print(f"{target_broker.client_id} should prepare transaction {json.get('tid')}")
-    # Agora os dois brokers tem a transacao na lista e o protocolo pode iniciar
+      target_broker.prepare(json.get('tid'))
     return {'data': json}
 
 class Server(Resource):

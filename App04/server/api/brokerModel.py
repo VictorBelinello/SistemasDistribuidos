@@ -16,18 +16,31 @@ class BrokerModel(object):
     self.interface = BrokerInterface()
     self.transactions : dict = {}
 
+    self.filename : str = f'CarteiraFinal_Acionista{self.client_id}.txt'
+
   def add_transaction(self, t : Transaction):
     self.transactions[t.tid] = t
-    if t.buyer == self.client_id:
-      # Se eu for o comprador, vira o coordenador da transacao
-      # prepare
-      self.interface.send_prepare(t.seller, t.tid)
-      # if ok commit
-      # else abort
       
-    print(self.transactions)
+  def save_to_file(self):
+    with open(self.filename) as f:
+      for stock in self.stocks:
+        f.write(str(stock))
 
-  def start_trade(self, my : tuple, other : tuple):
+  def prepare(self, tid : str):
+    t : Transaction = self.transactions.get(tid)
+    print(f"Preparing transaction {t.tid}")
+    print("Saving current state")
+    self.save_to_file()
+    print("Updating stocks")
+    #...
+
+  def begin_transaction(self, tid : str):
+    # Chamada pelo BrokerServer apos receber PUT request para nova transacao
+    t : Transaction = self.transactions.get(tid)
+    # Envia notificacao para preparar para commit 
+    self.interface.send_prepare(t.seller, t.tid)
+
+  def notify_trade(self, my : tuple, other : tuple):
     order = my[1:-2]
     buyer = my[-1] if my[0] == 'buy' else other[-1]
     seller = my[-1] if my[0] == 'sell' else other[-1]
@@ -45,7 +58,7 @@ class BrokerModel(object):
       same_price = my_order[2] == order[2]     # Mesmo preco
       same_amount =  my_order[3] == order[3]   # Mesma quantidade
       if diff_operation and same_symbol and same_price and same_amount:        
-        self.start_trade(my_order, order)
+        self.notify_trade(my_order, order)
 
   def add_order(self, symbol : Optional[str], operation : str , price : float, amount : int, timeout : int) -> tuple:
     try:

@@ -8,6 +8,7 @@ class Transaction(object):
     self.buyer = buyer 
     self.seller = seller 
     self.order = order
+    self.state = "active"
     self.tid = Transaction.TID
     Transaction.TID += 1
 
@@ -22,4 +23,4 @@ class Transaction(object):
 
   def log(self):
     current_date = datetime.now().strftime("%d/%m/%Y %X")
-    return f"{current_date}: {self.tid}"
+    return f"{current_date}: {self.tid} {self.state}"
