@@ -51,10 +51,11 @@ export function setupMenu(){
   const menuSelect = document.querySelector("select#menu");
 
   menuSelect.addEventListener('change', () => {
-    const idx = parseInt(menuSelect.value) + 1;
-    const opt = menuSelect.querySelector(`option:nth-child(${idx})`);
-    console.log(opt.textContent);
-    menuSelect.selectedIndex = 0;
-    handleMenuOption(idx - 1);
+    // Pega o valor selecionado no menu, convertendo para int
+    const option = parseInt(menuSelect.value);
+    // Reseta selecao para primeiro opcao do menu
+    menuSelect.selectedIndex = 0; 
+    // Trata a opcao de acordo
+    handleMenuOption(option);
   });
 }
