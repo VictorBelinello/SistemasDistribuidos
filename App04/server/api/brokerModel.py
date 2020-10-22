@@ -3,45 +3,49 @@ from typing import Optional
 import requests
 
 from .market import Market
+from .transaction import Transaction
 
-class BrokerInterface(object):  
-  # Faz a interface com outros brokers
-  # Normalmente realizando requisicoes para outros servidores onde os brokers estao
-  # Aqui faz a requisicao para o proprio servidor
-  def __init__(self, client_id : str):
-    self.client_id = client_id
-    self.url = 'http://127.0.0.1:5000/brokers'
-
-  def get_others(self) -> list:
-    r = requests.get(self.url)
-    # Recupera um json com um unico campo 'data'
-    json : dict = r.json()
-    # Esse campo contem um vetor de ordens, onde uma ordem eh tambem um vetor
-    orders : dict = json['data']
-    # O ultimo campo do vetor order(order[-1]) eh o id do cliente que postou a ordem
-    return [order for order in orders if order[-1] != self.client_id]
+from .brokerInterface import BrokerInterface
 
 class BrokerModel(object):
+  """Classe para representar um broker, responsavel pelas acoes do cliente e por realizar transacoes"""
   def __init__(self, client_id : str, market : Market):
     self.client_id : str = client_id
     self.stocks : list = [(s, randint(1, 5)) for s in Market.get_random_symbols(market.symbols)]
     self.orders : list = []
-    self.interface : BrokerInterface = BrokerInterface(self.client_id)
+    self.interface = BrokerInterface()
+    self.transactions : dict = {}
 
+  def add_transaction(self, t : Transaction):
+    self.transactions[t.tid] = t
+    if t.buyer == self.client_id:
+      # Se eu for o comprador, vira o coordenador da transacao
+      # prepare
+      self.interface.send_prepare(t.seller, t.tid)
+      # if ok commit
+      # else abort
+      
+    print(self.transactions)
 
-  def check_if_can_trade(self, other_order : tuple):
-    for order in self.orders:
-      if order[0] != other_order[0]:        # Um vendendo e outro comprando
-        if order[1] == other_order[1]:      # Mesmo symbol
-          if order[2] == other_order[2]:    # Mesmo preco
-            if order[3] == other_order[3]:  # Mesma quantidade
-              print(f"I can trade my {order} with {other_order}")
+  def start_trade(self, my : tuple, other : tuple):
+    order = my[1:-2]
+    buyer = my[-1] if my[0] == 'buy' else other[-1]
+    seller = my[-1] if my[0] == 'sell' else other[-1]
 
-  def check_orders(self):
+    self.interface.notify_brokers(order, buyer, seller)
+
+  def check_orders(self, my_order : tuple):
     # Pega os outros brokers no sistema e ve se algum pode realizar uma transacao
     print("Checking if can make transaction")
-    for order in self.interface.get_others():
-      self.check_if_can_trade(order)
+    for order in self.interface.get_all_orders():
+      if order[-1] == self.client_id:
+        continue
+      diff_operation = my_order[0] != order[0] # Um vendendo e outro comprando
+      same_symbol = my_order[1] == order[1]    # Mesmo symbol
+      same_price = my_order[2] == order[2]     # Mesmo preco
+      same_amount =  my_order[3] == order[3]   # Mesma quantidade
+      if diff_operation and same_symbol and same_price and same_amount:        
+        self.start_trade(my_order, order)
 
   def add_order(self, symbol : Optional[str], operation : str , price : float, amount : int, timeout : int) -> tuple:
     try:
@@ -53,7 +57,7 @@ class BrokerModel(object):
           raise AttributeError(0 if not owned else owned[0])
       order = [operation, symbol, float(price), int(amount), int(timeout), self.client_id]
       self.orders.append(order)
-      self.check_orders()
+      self.check_orders(order)
       return (True, None)
     except AttributeError as a:
       return (False, f'You cannot make this order, you have {a.args[0]} stocks of {symbol}')
