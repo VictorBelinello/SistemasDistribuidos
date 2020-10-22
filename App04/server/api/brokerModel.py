@@ -1,4 +1,5 @@
 from random import randint
+from typing import Optional
 import requests
 
 from .market import Market
@@ -11,7 +12,7 @@ class BrokerInterface(object):
     self.client_id = client_id
     self.url = 'http://127.0.0.1:5000/brokers'
 
-  def get_others(self) -> dict:
+  def get_others(self) -> list:
     r = requests.get(self.url)
     # Recupera um json com um unico campo 'data'
     json : dict = r.json()
@@ -42,11 +43,11 @@ class BrokerModel(object):
     for order in self.interface.get_others():
       self.check_if_can_trade(order)
 
-  def add_order(self, symbol : str, operation : str , price : float, amount : int, timeout : int) -> tuple:
+  def add_order(self, symbol : Optional[str], operation : str , price : float, amount : int, timeout : int) -> tuple:
     try:
       if operation == 'sell':
         # Verifica se cliente tem acoes para vender
-        owned : int = [s[1] for s in self.stocks if s[0] == symbol]
+        owned : list = [s[1] for s in self.stocks if s[0] == symbol]
         if not owned or owned[0] < amount:
           # Nao tenhuma acao de 'symbol' ou nao tem quantidade suficiente
           raise AttributeError(0 if not owned else owned[0])

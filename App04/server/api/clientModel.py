@@ -1,6 +1,8 @@
 from .market import Market
 from .brokerModel import BrokerModel
 
+from typing import Optional
+
 class ClientModel(object):
   def __init__(self, client_id : str, market : Market):
     self.client_id = client_id
@@ -10,7 +12,7 @@ class ClientModel(object):
     self.subscriptions : list = []
     self.broker = BrokerModel(self.client_id, self.market)
   
-  def check_symbol(self, symbol : str) -> bool:
+  def check_symbol(self, symbol : Optional[str]) -> bool:
     return symbol in self.market.symbols
 
   def check_subscriptions(self):
@@ -29,7 +31,7 @@ class ClientModel(object):
             yield f"data: {msg}\n\n"
           
   ############# QUOTES
-  def add_quote(self, symbol : str) -> tuple:
+  def add_quote(self, symbol : Optional[str]) -> tuple:
     if self.check_symbol(symbol):
       if symbol not in self.quotes:
         self.quotes.append( symbol )
@@ -46,14 +48,14 @@ class ClientModel(object):
       res[symb] = self.market.quote(symb)
     return res
 
-  def del_quote(self, symbol : str) -> tuple:
+  def del_quote(self, symbol : Optional[str]) -> tuple:
     if symbol in self.quotes:
       self.quotes.remove(symbol)
       return (True, None)
     return (False, f"Couldn't find symbol {symbol} on your quotes")
 
   ############# SUBSCRIPTIONS
-  def add_subscription(self, symbol : str, lower : str, upper : str) -> tuple:
+  def add_subscription(self, symbol : Optional[str], lower : Optional[str], upper : Optional[str]) -> tuple:
     if self.check_symbol(symbol):
       if not lower or not upper:
         return (False, f"Subscription not complete, missing limit")
@@ -79,7 +81,7 @@ class ClientModel(object):
     return res
 
   ############# ORDER
-  def add_order(self, symbol : str, operation : str, price : float, amount : int, timeout : int) -> tuple:
+  def add_order(self, symbol : Optional[str], operation : Optional[str], price : Optional[float], amount : Optional[int], timeout : Optional[int]) -> tuple:
     if self.check_symbol(symbol):
       if not price or not amount or not timeout:
         return (False, f"Order not complete, missing price, amount or timeout")
