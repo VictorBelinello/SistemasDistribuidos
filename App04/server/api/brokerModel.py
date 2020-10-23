@@ -18,7 +18,7 @@ class BrokerModel(Participant):
     self.transactions : dict = {}
     super().__init__(self.client_id, self.transactions, self.stocks)
     self.interface = BrokerInterface()
-   
+    self.notify_client = False
   
   def sell_stocks(self, order : tuple):
     print("Selling stocks")
@@ -44,6 +44,16 @@ class BrokerModel(Participant):
     if not found:
       stock = (symbol, amount)
       self.stocks.append( stock )
+
+  def commit(self, tid : str):
+    t : Transaction = self.transactions.get(tid)
+    super().commit(tid)
+    self.notify_client = True
+    operation = "sold" if t.seller == self.client_id else "bought"
+    symbol = t.order[0]
+    amount = int(t.order[2])
+    total = float(t.order[1]) * amount
+    self.notify_msg = f"You {operation} {amount} stocks of {symbol} for {total}"
 
   def begin_transaction(self, tid : str):
     # Chamada pelo BrokerServer apos receber PUT request para nova transacao
@@ -87,13 +97,16 @@ class BrokerModel(Participant):
 
   def add_order(self, symbol : Optional[str], operation : str , price : float, amount : int, timeout : int) -> tuple:
     try:
+      price = float(price)
+      amount = int(amount)
+      timeout = int(timeout)
       if operation == 'sell':
         # Verifica se cliente tem acoes para vender
         owned : list = [s[1] for s in self.stocks if s[0] == symbol]
         if not owned or owned[0] < amount:
           # Nao tenhuma acao de 'symbol' ou nao tem quantidade suficiente
           raise AttributeError(0 if not owned else owned[0])
-      order = (operation, symbol, float(price), int(amount), int(timeout), self.client_id)
+      order = (operation, symbol, price, amount, timeout, self.client_id)
       self.orders.append(order)
       self.check_orders(order)
       return (True, None)

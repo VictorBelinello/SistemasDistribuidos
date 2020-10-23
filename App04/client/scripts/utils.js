@@ -1,5 +1,6 @@
-import { getTopic, addToTopic, removeFromTopic } from "./server_utils.js";
+import { getTopic, addToTopic, removeFromTopic, client_id } from "./server_utils.js";
 
+const resultArea = document.querySelector("textarea#response");
 
 // Implementacao obtida do link: https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid
 export function uuidv4() {
@@ -9,14 +10,27 @@ export function uuidv4() {
   });
 }
 
+function getStock(){
+  const symbol = prompt("Informe o nome do símbolo").toUpperCase();
+  const operation = prompt("Informe a operação (buy ou sell)");
+  const amount = prompt("Quantidade de ações");
+  const price =  prompt("Preço alvo. Use '.' para separar casas decimais.");
+  const timeout =  prompt("Quanto tempo deseja manter a ação em estado condicional?");
+  const data = {owner:client_id, symbol:symbol, operation:operation, amount:amount, price:price, timeout:timeout};
+  return data;
+}
+
 export async function handleMenuOption(option) {
   let symbol = "";
   let stocks = "";
+
   switch (option) {
     case 1:
       const interests = await getTopic('/quotes');
-      //TODO: Mudar para textarea depois
-      console.log(interests);
+      resultArea.value = "";
+      for (const key in interests) {
+        resultArea.value += `${key} ${interests[key]} \n`;
+      }
       break;
     case 2:
       symbol = prompt("Informe o nome do símbolo").toUpperCase();
@@ -35,11 +49,14 @@ export async function handleMenuOption(option) {
       break;
     case 5:
       const stocks = await getTopic('/stocks');
-      console.log(stocks);
+      resultArea.value = "";
+      for (const key in stocks) {
+        resultArea.value +=`${key} ${stocks[key]} \n`;
+      }
       break;
     case 6:
-      break;
-    case 7:
+      const stock = getStock();
+      addToTopic('/order', stock);
       break;
     default:
       break;

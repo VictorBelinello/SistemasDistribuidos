@@ -23,6 +23,9 @@ class ClientController(object):
     # /id/subscriptions
     if topic == 'subscriptions':  
       return {'data': self.model.get_subscriptions()}
+    # /id/listen/stocks
+    if topic == 'stocks' and request.path.split('/')[-2] == 'listen': 
+      return Response(self.model.check_transactions(), mimetype='text/event-stream')
     # /id/stocks
     if topic == 'stocks':  
       return {'data': self.model.get_stocks()}

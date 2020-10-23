@@ -29,7 +29,15 @@ class ClientModel(object):
             msg : str = f"Symbol {symb} at {current}"
             self.subscriptions.remove(sub)
             yield f"data: {msg}\n\n"
-          
+
+  def check_transactions(self):
+    # Chamado pelo clientController quando recebe GET para /listen/stocks
+    while True:
+      if self.broker.notify_client:
+        self.broker.notify_client = False
+        msg : str = self.broker.notify_msg
+        yield f"data: {msg}\n\n"
+
   ############# QUOTES
   def add_quote(self, symbol : Optional[str]) -> tuple:
     if self.check_symbol(symbol):

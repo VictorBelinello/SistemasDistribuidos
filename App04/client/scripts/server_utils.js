@@ -1,6 +1,6 @@
 import { uuidv4 } from "./utils.js";
 // Inicializa um ID
-const client_id = uuidv4();
+export const client_id = uuidv4();
 
 // Constroi URL base usando o ID
 const baseURL = `http://localhost:5000/${client_id}`;

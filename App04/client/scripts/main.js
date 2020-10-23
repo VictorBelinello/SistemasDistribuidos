@@ -16,6 +16,9 @@ async function main() {
   subToTopic('/subscriptions', (event) => {
     notificationsArea.value += event.data + '\n';
   });
+  subToTopic('/stocks', (event) => {
+    notificationsArea.value += event.data + '\n';
+  });
 
   setupMenu();
 }
