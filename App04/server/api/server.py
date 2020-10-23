@@ -35,12 +35,18 @@ class BrokerServer(object):
     return {'data': json}
 
   def prepare_transaction(self, id : str):
+    """PUT request para /brokers/id"""
     # O coordenador esta enviando put request para um broker especifico (o outro participante)
     json : dict = request.get_json()
     target_broker = self.brokers.get(id)
     if target_broker:
-      target_broker.prepare(json.get('tid'))
-    return {'data': json}
+      if json.get('action') == 'prepare':
+        res = target_broker.prepare(json.get('tid'))
+      elif json.get('action') == 'commit':
+        res = target_broker.commit(json.get('tid'))
+      elif json.get('action') == 'abort':
+        res = target_broker.abort(json.get('tid'))
+    return {'data': res}
 
 class Server(Resource):
   """Recurso REST fornecido, recebe e trata as requisições HTTP.

@@ -1,44 +1,69 @@
 from random import randint
 from typing import Optional
+from threading import Lock
 import requests
+import os
 
 from .market import Market
 from .transaction.transaction import Transaction
-
+from .transaction.participant import Participant
 from .brokerInterface import BrokerInterface
 
-class BrokerModel(object):
+class BrokerModel(Participant):
   """Classe para representar um broker, responsavel pelas acoes do cliente e por realizar transacoes"""
   def __init__(self, client_id : str, market : Market):
     self.client_id : str = client_id
-    self.stocks : list = [(s, randint(1, 5)) for s in Market.get_random_symbols(market.symbols)]
+    self.stocks : list = [[s, randint(1, 5)] for s in Market.get_random_symbols(market.symbols)]
     self.orders : list = []
-    self.interface = BrokerInterface()
     self.transactions : dict = {}
+    super().__init__(self.client_id, self.transactions, self.stocks)
+    self.interface = BrokerInterface()
+   
+  
+  def sell_stocks(self, order : tuple):
+    print("Selling stocks")
+    symbol = order[0]
+    amount = order[2]
+    print(self.stocks)
+    for stock in self.stocks:
+      if stock[0] == symbol:
+        stock[1] -= amount
+        if stock[1] == 0:
+          self.stocks.remove(stock)
+    print(self.stocks)
 
-    self.filename : str = f'CarteiraFinal_Acionista{self.client_id}.txt'
-
-  def add_transaction(self, t : Transaction):
-    self.transactions[t.tid] = t
-      
-  def save_to_file(self):
-    with open(self.filename) as f:
-      for stock in self.stocks:
-        f.write(str(stock))
-
-  def prepare(self, tid : str):
-    t : Transaction = self.transactions.get(tid)
-    print(f"Preparing transaction {t.tid}")
-    print("Saving current state")
-    self.save_to_file()
-    print("Updating stocks")
-    #...
+  def buy_stocks(self, order : tuple):
+    print("Buying stocks")
+    symbol = order[0]
+    amount = order[2]
+    found = False
+    for stock in self.stocks:
+      if stock[0] == symbol:
+        stock[1] += amount
+        found = True
+    if not found:
+      stock = (symbol, amount)
+      self.stocks.append( stock )
 
   def begin_transaction(self, tid : str):
     # Chamada pelo BrokerServer apos receber PUT request para nova transacao
+    # self eh um comprador sempre
+    self.logfile = self.logfile.replace('Participante', 'Coordenador')
     t : Transaction = self.transactions.get(tid)
     # Envia notificacao para preparar para commit 
-    self.interface.send_prepare(t.seller, t.tid)
+    seller_vote = self.interface.send_can_commit(t.seller, t.tid)
+    # Prepara a propria transacao
+    my_vote = self.prepare(t.tid)
+    if seller_vote and my_vote:
+      # Ambos votaram sim, realiza commit
+      seller_ack = self.interface.send_commit(t.seller, t.tid)
+      my_ack = self.commit(t.tid)
+    else:
+      # Alguem votou nao, aborta
+      self.interface.send_abort(t.seller, t.tid)
+      self.abort(t.tid)
+    # Volta logfile para ser apenas participante
+    self.logfile = self.logfile.replace('Coordenador', 'Participante')
 
   def notify_trade(self, my : tuple, other : tuple):
     order = my[1:-2]
