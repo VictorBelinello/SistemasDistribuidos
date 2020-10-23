@@ -8,6 +8,7 @@ class Transaction(object):
     self.buyer = buyer 
     self.seller = seller 
     self.order = order
+    self.state = "ACTIVE"
     self.tid = Transaction.TID
     Transaction.TID += 1
 
@@ -15,11 +16,11 @@ class Transaction(object):
     return str(self)
 
   def __str__(self):
-    return f"T<{self.tid}> between {self.buyer} and {self.seller}. Order:{self.order}"
+    return f"T<{self.tid}> between B:{self.buyer} and S:{self.seller}. Order:{self.order}"
 
-  def toJSON(self):
-    return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
+  def set_state(self, state : str):
+    self.state = state.upper()
   def log(self):
     current_date = datetime.now().strftime("%d/%m/%Y %X")
-    return f"{current_date}: {self.tid}"
+    return f"{current_date}: {self.state} {self}"

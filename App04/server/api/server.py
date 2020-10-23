@@ -7,7 +7,7 @@ from api.clientModel import ClientModel
 from api.clientController import ClientController
 from api.market import Market
 from api.brokerModel import BrokerModel
-from api.transaction import Transaction
+from api.transaction.transaction import Transaction
 
 class BrokerServer(object):
   # Normalmente esse recurso ficaria em outro servidor, mas para facilitar aqui esta tudo junto, apenas separado em classes
@@ -30,16 +30,23 @@ class BrokerServer(object):
 
     seller = self.brokers.get(json.get('seller'))
     seller.add_transaction(t)
-
+    # Agora os dois brokers tem a transacao na lista e o protocolo pode iniciar
+    buyer.begin_transaction(t.tid)
     return {'data': json}
 
   def prepare_transaction(self, id : str):
-    json : dict = request.get_json()
+    """PUT request para /brokers/id"""
     # O coordenador esta enviando put request para um broker especifico (o outro participante)
+    json : dict = request.get_json()
     target_broker = self.brokers.get(id)
-    print(f"{target_broker.client_id} should prepare transaction {json.get('tid')}")
-    # Agora os dois brokers tem a transacao na lista e o protocolo pode iniciar
-    return {'data': json}
+    if target_broker:
+      if json.get('action') == 'prepare':
+        res = target_broker.prepare(json.get('tid'))
+      elif json.get('action') == 'commit':
+        res = target_broker.commit(json.get('tid'))
+      elif json.get('action') == 'abort':
+        res = target_broker.abort(json.get('tid'))
+    return {'data': res}
 
 class Server(Resource):
   """Recurso REST fornecido, recebe e trata as requisições HTTP.

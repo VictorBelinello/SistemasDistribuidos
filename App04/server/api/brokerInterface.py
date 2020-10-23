@@ -16,13 +16,17 @@ class BrokerInterface(object):
     r = requests.put(self.url, json={'order': order, 'buyer': buyer, 'seller': seller})
     return r.json()
 
-  def send_prepare(self, target : str, tid : str):
-    r = requests.put(self.url + f'/{target}', json={'tid': tid})
+  def send_to(self, target: str, tid : str, action : str):
+    r = requests.put(self.url + f'/{target}', json={'tid': tid, 'action': action})
+    json : dict = r.json()
+    ans : bool = json.get('data')
+    return ans
 
-  def send_commit(self):
-    r = requests.put(self.url, json={'data': 'Commit your shit'})
-    return r.json()
+  def send_can_commit(self, target : str, tid : str):
+    return self.send_to(target, tid, 'prepare')
 
-  def send_abort(self):
-    r = requests.put(self.url, json={'data': 'Abort your shit'})
-    return r.json()
+  def send_commit(self, target : str, tid : str):
+    return self.send_to(target, tid, 'commit')
+
+  def send_abort(self, target : str, tid : str):
+    return self.send_to(target, tid, 'abort')
