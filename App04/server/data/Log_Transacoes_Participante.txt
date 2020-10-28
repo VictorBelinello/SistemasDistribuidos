@@ -1,3 +1,0 @@
-23/10/2020 15:21:45: ACTIVE T<1> between B:1234 and S:5678. Order:['INTC', 100.0, 1]
-23/10/2020 15:21:45: TEMP COMMIT T<1> between B:1234 and S:5678. Order:['INTC', 100.0, 1]
-23/10/2020 15:21:45: COMMITTED T<1> between B:1234 and S:5678. Order:['INTC', 100.0, 1]
