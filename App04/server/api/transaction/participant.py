@@ -1,6 +1,4 @@
 from threading import Lock
-import os
-import shutil
 from .transaction import Transaction
 
 class Participant(object):
@@ -12,9 +10,6 @@ class Participant(object):
     self.stocks_lock = Lock()
     self.filename : str = f'data/CarteiraFinal_Acionista_{self.client_id}.txt'
     self.logfile : str = f'data/Log_Transacoes_Participante.txt'
-
-    shutil.rmtree('data/')
-    os.mkdir('data')
 
     self.FAKE_ABORT = False
 

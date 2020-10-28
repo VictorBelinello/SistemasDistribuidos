@@ -1,8 +1,10 @@
 from random import randint
 from typing import Optional
-from threading import Lock
+from threading import Lock, Thread
+
 import requests
 import os
+import time
 
 from .market import Market
 from .transaction.transaction import Transaction
@@ -19,18 +21,29 @@ class BrokerModel(Participant):
     super().__init__(self.client_id, self.transactions, self.stocks)
     self.interface = BrokerInterface()
     self.notify_client = False
-  
+    Thread(target=self.update_timeouts, daemon=True).start()
+
+  def update_timeouts(self):
+    # Para efeito de demonstração aqui a unidade de tempo minima é um segundo
+    sleep_seconds = 1
+    while True:
+      for order in self.orders:
+        #order = (operation, symbol, price, amount, timeout, self.client_id)
+        if order[-2] > 0:
+          order[-2] -= 1
+        if order[-2] == 0:
+          self.orders.remove(order)
+      time.sleep(sleep_seconds)
+
   def sell_stocks(self, order : tuple):
     print("Selling stocks")
     symbol = order[0]
     amount = order[2]
-    print(self.stocks)
     for stock in self.stocks:
       if stock[0] == symbol:
         stock[1] -= amount
         if stock[1] == 0:
           self.stocks.remove(stock)
-    print(self.stocks)
 
   def buy_stocks(self, order : tuple):
     print("Buying stocks")
@@ -87,12 +100,14 @@ class BrokerModel(Participant):
     print("Checking if can make transaction")
     for order in self.interface.get_all_orders():
       if order[-1] == self.client_id:
+        # Nao faz transacao com si mesmo
         continue
       diff_operation = my_order[0] != order[0] # Um vendendo e outro comprando
       same_symbol = my_order[1] == order[1]    # Mesmo symbol
       same_price = my_order[2] == order[2]     # Mesmo preco
       same_amount =  my_order[3] == order[3]   # Mesma quantidade
-      if diff_operation and same_symbol and same_price and same_amount:        
+      if diff_operation and same_symbol and same_price and same_amount: 
+        # Pode realizar transacao       
         self.notify_trade(my_order, order)
 
   def add_order(self, symbol : Optional[str], operation : str , price : float, amount : int, timeout : int) -> tuple:
@@ -106,7 +121,7 @@ class BrokerModel(Participant):
         if not owned or owned[0] < amount:
           # Nao tenhuma acao de 'symbol' ou nao tem quantidade suficiente
           raise AttributeError(0 if not owned else owned[0])
-      order = (operation, symbol, price, amount, timeout, self.client_id)
+      order = [operation, symbol, price, amount, timeout, self.client_id]
       self.orders.append(order)
       self.check_orders(order)
       return (True, None)
